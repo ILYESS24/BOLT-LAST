@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: dyad-static
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_APP_NAME
+        value: Dyad
+      - key: VITE_APP_VERSION
+        value: 0.20.0-beta.1
+      - key: VITE_APP_DESCRIPTION
+        value: Constructeur d'applications IA
+      - key: VITE_DEV_MODE
+        value: false
+      - key: VITE_DEBUG
+        value: false
+    healthCheckPath: /
+    autoDeploy: true
+    branch: main
+    rootDir: .

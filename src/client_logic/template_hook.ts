@@ -11,13 +11,13 @@ export async function neonTemplateHook({
 }) {
   console.log("Creating Neon project");
   const neonProject = await IpcClient.getInstance().createNeonProject({
-    name: appName,
-    appId: appId,
+    projectName: appName,
+    appId: appId.toString(),
   });
 
   console.log("Neon project created", neonProject);
   await IpcClient.getInstance().setAppEnvVars({
-    appId: appId,
+    appId: appId.toString(),
     envVars: [
       {
         key: "POSTGRES_URL",

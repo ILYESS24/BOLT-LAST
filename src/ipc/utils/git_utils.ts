@@ -1,7 +1,7 @@
 import { getGitAuthor } from "./git_author";
 import git from "isomorphic-git";
-import fs from "node:fs";
-import { promises as fsPromises } from "node:fs";
+import fs, { promises as fsPromises } from "node:fs";
+
 import pathModule from "node:path";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";

@@ -20,7 +20,7 @@ export function useLocalLMSModels() {
   const loadModels = useCallback(async () => {
     setLoading(true);
     try {
-      const modelList = await ipcClient.listLocalLMStudioModels();
+      const modelList = await ipcClient.getLocalModels();
       setModels(modelList);
       setError(null);
 

@@ -17,14 +17,12 @@ import {
   SaveVercelAccessTokenParams,
   VercelDeployment,
   VercelProject,
-} from "../ipc_types";
-import { ConnectToExistingVercelProjectParams } from "../ipc_types";
-import { GetVercelDeploymentsParams } from "../ipc_types";
-import { DisconnectVercelProjectParams } from "../ipc_types";
-import { createLoggedHandler } from "./safe_handle";
+ ConnectToExistingVercelProjectParams , GetVercelDeploymentsParams , DisconnectVercelProjectParams } from "../ipc_types";
+
+
+
 
 const logger = log.scope("vercel_handlers");
-const handle = createLoggedHandler(logger);
 
 // Use test server URLs when in test mode
 const TEST_SERVER_BASE = "http://localhost:3500";
@@ -179,7 +177,7 @@ async function handleSaveVercelToken(
 async function handleListVercelProjects(): Promise<VercelProject[]> {
   try {
     const settings = readSettings();
-    const accessToken = settings.vercelAccessToken?.value;
+    const accessToken = typeof settings.vercelAccessToken === 'string' ? settings.vercelAccessToken : settings.vercelAccessToken?.value;
     if (!accessToken) {
       throw new Error("Not authenticated with Vercel.");
     }
@@ -209,7 +207,7 @@ async function handleIsProjectAvailable(
 ): Promise<{ available: boolean; error?: string }> {
   try {
     const settings = readSettings();
-    const accessToken = settings.vercelAccessToken?.value;
+    const accessToken = typeof settings.vercelAccessToken === 'string' ? settings.vercelAccessToken : settings.vercelAccessToken?.value;
     if (!accessToken) {
       return { available: false, error: "Not authenticated with Vercel." };
     }
@@ -247,7 +245,7 @@ async function handleCreateProject(
   { name, appId }: CreateVercelProjectParams,
 ): Promise<void> {
   const settings = readSettings();
-  const accessToken = settings.vercelAccessToken?.value;
+  const accessToken = typeof settings.vercelAccessToken === 'string' ? settings.vercelAccessToken : settings.vercelAccessToken?.value;
   if (!accessToken) {
     throw new Error("Not authenticated with Vercel.");
   }
@@ -352,7 +350,7 @@ async function handleConnectToExistingProject(
 ): Promise<void> {
   try {
     const settings = readSettings();
-    const accessToken = settings.vercelAccessToken?.value;
+    const accessToken = typeof settings.vercelAccessToken === 'string' ? settings.vercelAccessToken : settings.vercelAccessToken?.value;
     if (!accessToken) {
       throw new Error("Not authenticated with Vercel.");
     }
@@ -404,7 +402,7 @@ async function handleGetVercelDeployments(
 ): Promise<VercelDeployment[]> {
   try {
     const settings = readSettings();
-    const accessToken = settings.vercelAccessToken?.value;
+    const accessToken = typeof settings.vercelAccessToken === 'string' ? settings.vercelAccessToken : settings.vercelAccessToken?.value;
     if (!accessToken) {
       throw new Error("Not authenticated with Vercel.");
     }
@@ -477,12 +475,12 @@ export function registerVercelHandlers() {
   ipcMain.handle("vercel:save-token", handleSaveVercelToken);
 
   // Logged handlers
-  handle("vercel:list-projects", handleListVercelProjects);
-  handle("vercel:is-project-available", handleIsProjectAvailable);
-  handle("vercel:create-project", handleCreateProject);
-  handle("vercel:connect-existing-project", handleConnectToExistingProject);
-  handle("vercel:get-deployments", handleGetVercelDeployments);
-  handle("vercel:disconnect", handleDisconnectVercelProject);
+  ipcMain.handle("vercel:list-projects", handleListVercelProjects);
+  ipcMain.handle("vercel:is-project-available", handleIsProjectAvailable);
+  ipcMain.handle("vercel:create-project", handleCreateProject);
+  ipcMain.handle("vercel:connect-existing-project", handleConnectToExistingProject);
+  ipcMain.handle("vercel:get-deployments", handleGetVercelDeployments);
+  ipcMain.handle("vercel:disconnect", handleDisconnectVercelProject);
 }
 
 export async function updateAppVercelProject({

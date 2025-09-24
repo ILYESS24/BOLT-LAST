@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 
 import { useStreamChat } from "@/hooks/useStreamChat";
 import { useCheckProblems } from "@/hooks/useCheckProblems";
-import { createProblemFixPrompt } from "@/shared/problem_prompt";
+// import { createProblemFixPrompt } from "@/shared/problem_prompt";
 import { showError } from "@/lib/toast";
 
 interface ProblemItemProps {
@@ -105,7 +105,7 @@ interface ProblemsSummaryProps {
 }
 
 const ProblemsSummary = ({ problemReport, appId }: ProblemsSummaryProps) => {
-  const { streamMessage } = useStreamChat();
+  const { sendMessage: _sendMessage } = useStreamChat();
   const { problems } = problemReport;
   const totalErrors = problems.length;
   const [selectedChatId] = useAtom(selectedChatIdAtom);
@@ -114,10 +114,10 @@ const ProblemsSummary = ({ problemReport, appId }: ProblemsSummaryProps) => {
     if (!selectedChatId) {
       return;
     }
-    streamMessage({
-      prompt: createProblemFixPrompt(problemReport),
-      chatId: selectedChatId,
-    });
+    // streamMessage({
+    //   prompt: createProblemFixPrompt(problemReport),
+    //   chatId: selectedChatId,
+    // });
   };
 
   if (problems.length === 0) {
@@ -174,7 +174,7 @@ export function Problems() {
 
 export function _Problems() {
   const selectedAppId = useAtomValue(selectedAppIdAtom);
-  const { problemReport } = useCheckProblems(selectedAppId);
+  const { problemReport } = useCheckProblems(selectedAppId || "0");
 
   if (!selectedAppId) {
     return (
@@ -200,14 +200,14 @@ export function _Problems() {
         <p className="text-sm text-muted-foreground max-w-md mb-4">
           Run checks to scan your app for TypeScript errors and other problems.
         </p>
-        <RecheckButton appId={selectedAppId} />
+        <RecheckButton appId={parseInt(selectedAppId || "0")} />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-      <ProblemsSummary problemReport={problemReport} appId={selectedAppId} />
+        <ProblemsSummary problemReport={problemReport} appId={parseInt(selectedAppId || "0")} />
       <div className="flex-1 overflow-y-auto">
         {problemReport.problems.map((problem, index) => (
           <ProblemItem

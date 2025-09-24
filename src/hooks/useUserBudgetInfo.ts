@@ -15,7 +15,7 @@ export function useUserBudgetInfo() {
     queryKey: queryKey,
     queryFn: async () => {
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.getUserBudget();
+      return ipcClient.getUserBudgetInfo();
     },
     // This data is not critical and can be stale for a bit
     staleTime: FIVE_MINUTES_IN_MS,

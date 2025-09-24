@@ -53,7 +53,7 @@ export function ApiKeyConfiguration({
   }
 
   const envApiKey = envVarName ? envVars[envVarName] : undefined;
-  const userApiKey = settings?.providerSettings?.[provider]?.apiKey?.value;
+  const userApiKey = (settings?.providerSettings as any)?.[provider]?.apiKey?.value;
 
   const isValidUserKey =
     !!userApiKey &&

@@ -21,7 +21,7 @@ export function useProposal(chatId?: number | undefined) {
       try {
         // Type assertion might be needed depending on how IpcClient is typed
         const result = (await IpcClient.getInstance().getProposal(
-          chatId,
+          chatId.toString(),
         )) as ProposalResult | null;
 
         if (result) {

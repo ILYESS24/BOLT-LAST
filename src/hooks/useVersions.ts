@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { RevertVersionResponse, Version } from "@/ipc/ipc_types";
 import { toast } from "sonner";
 
-export function useVersions(appId: number | null) {
+export function useVersions(appId: string | number | null) {
   const [, setVersionsAtom] = useAtom(versionsListAtom);
   const selectedChatId = useAtomValue(selectedChatIdAtom);
   const [, setMessages] = useAtom(chatMessagesAtom);
@@ -26,7 +26,7 @@ export function useVersions(appId: number | null) {
         return [];
       }
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.listVersions({ appId });
+      return ipcClient.listVersions(appId.toString());
     },
     enabled: appId !== null,
     initialData: [],
@@ -44,16 +44,17 @@ export function useVersions(appId: number | null) {
     Error,
     { versionId: string }
   >({
-    mutationFn: async ({ versionId }: { versionId: string }) => {
+    mutationFn: async ({ versionId }: { versionId: string }): Promise<RevertVersionResponse> => {
       const currentAppId = appId;
       if (currentAppId === null) {
         throw new Error("App ID is null");
       }
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.revertVersion({
-        appId: currentAppId,
+      await ipcClient.revertVersion(appId?.toString() || "", {
+        appId: parseInt(currentAppId.toString()),
         previousVersionId: versionId,
       });
+      return { success: true } as any;
     },
     onSuccess: async (result) => {
       if ("successMessage" in result) {
@@ -66,7 +67,7 @@ export function useVersions(appId: number | null) {
         queryKey: ["currentBranch", appId],
       });
       if (selectedChatId) {
-        const chat = await IpcClient.getInstance().getChat(selectedChatId);
+        const chat = await IpcClient.getInstance().getAppChat(selectedChatId);
         setMessages(chat.messages);
       }
       await queryClient.invalidateQueries({

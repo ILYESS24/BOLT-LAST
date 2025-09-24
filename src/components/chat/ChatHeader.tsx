@@ -4,8 +4,8 @@ import {
   PlusCircle,
   GitBranch,
   Info,
-} from "lucide-react";
-import { PanelRightClose } from "lucide-react";
+ PanelRightClose } from "lucide-react";
+
 import { useAtom, useAtomValue } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { useVersions } from "@/hooks/useVersions";
@@ -43,10 +43,10 @@ export function ChatHeader({
   onVersionClick,
 }: ChatHeaderProps) {
   const appId = useAtomValue(selectedAppIdAtom);
-  const { versions, loading: versionsLoading } = useVersions(appId);
+  const { versions, loading: versionsLoading } = useVersions(appId ? parseInt(appId) : null);
   const { navigate } = useRouter();
   const [selectedChatId, setSelectedChatId] = useAtom(selectedChatIdAtom);
-  const { refreshChats } = useChats(appId);
+  const { refreshChats } = useChats(appId ? parseInt(appId) : null);
   const { isStreaming } = useStreamChat();
   const isAnyCheckoutVersionInProgress = useAtomValue(
     isAnyCheckoutVersionInProgressAtom,
@@ -56,7 +56,7 @@ export function ChatHeader({
     branchInfo,
     isLoading: branchInfoLoading,
     refetchBranchInfo,
-  } = useCurrentBranch(appId);
+  } = useCurrentBranch(appId ? parseInt(appId) : null);
 
   const { checkoutVersion, isCheckingOutVersion } = useCheckoutVersion();
   const { renameBranch, isRenamingBranch } = useRenameBranch();
@@ -69,7 +69,7 @@ export function ChatHeader({
 
   const handleCheckoutMainBranch = async () => {
     if (!appId) return;
-    await checkoutVersion({ appId, versionId: "main" });
+    await checkoutVersion({ appId: parseInt(appId || "0"), versionId: "main" });
   };
 
   const handleRenameMasterToMain = async () => {
@@ -107,7 +107,7 @@ export function ChatHeader({
 
   return (
     <div className="flex flex-col w-full @container">
-      <LoadingBar isVisible={isAnyCheckoutVersionInProgress} />
+      <LoadingBar />
       {/* If the version pane is open, it's expected to not always be on the main branch. */}
       {isNotMainBranch && !isVersionPaneOpen && (
         <div className="flex flex-col @sm:flex-row items-center justify-between px-4 py-2 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">

@@ -6,7 +6,7 @@ export function handleDyadProReturn({ apiKey }: { apiKey: string }) {
     providerSettings: {
       ...settings.providerSettings,
       auto: {
-        ...settings.providerSettings.auto,
+        ...settings.providerSettings?.auto,
         apiKey: {
           value: apiKey,
         },

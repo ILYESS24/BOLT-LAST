@@ -1,13 +1,12 @@
-import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
 import { getAllTemplates } from "../utils/template_utils";
 import { localTemplatesData, type Template } from "../../shared/templates";
+import { ipcMain } from "electron";
 
 const logger = log.scope("template_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerTemplateHandlers() {
-  handle("get-templates", async (): Promise<Template[]> => {
+  ipcMain.handle("get-templates", async (): Promise<Template[]> => {
     try {
       const templates = await getAllTemplates();
       return templates;

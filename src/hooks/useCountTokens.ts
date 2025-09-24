@@ -20,8 +20,16 @@ export function useCountTokens() {
 
       try {
         const ipcClient = IpcClient.getInstance();
-        const tokenResult = await ipcClient.countTokens({ chatId, input });
-        setResult(tokenResult);
+        const tokenResult = await ipcClient.countTokens(input, "gpt-4");
+        setResult({ 
+          totalTokens: tokenResult,
+          messageHistoryTokens: 0,
+          codebaseTokens: 0,
+          mentionedAppsTokens: 0,
+          inputTokens: 0,
+          systemPromptTokens: 0,
+          contextWindow: 0
+        });
         return tokenResult;
       } catch (error) {
         console.error("Error counting tokens:", error);

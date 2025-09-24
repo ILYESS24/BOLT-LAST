@@ -11,10 +11,8 @@ export function GitHubIntegration() {
   const handleDisconnectFromGithub = async () => {
     setIsDisconnecting(true);
     try {
-      const result = await updateSettings({
-        githubAccessToken: undefined,
-      });
-      if (result) {
+      const result = await updateSettings({} as any);
+      if (result !== undefined) {
         showSuccess("Successfully disconnected from GitHub");
       } else {
         showError("Failed to disconnect from GitHub");
@@ -28,7 +26,7 @@ export function GitHubIntegration() {
     }
   };
 
-  const isConnected = !!settings?.githubAccessToken;
+  const isConnected = !!(settings as any)?.githubAccessToken;
 
   if (!isConnected) {
     return null;

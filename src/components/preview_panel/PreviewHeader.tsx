@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from "jotai";
-import { previewModeAtom, selectedAppIdAtom } from "../../atoms/appAtoms";
+import { selectedAppIdAtom } from "../../atoms/appAtoms";
 import { IpcClient } from "@/ipc/ipc_client";
 
 import {
@@ -31,7 +31,7 @@ import {
 import { showError, showSuccess } from "@/lib/toast";
 import { useMutation } from "@tanstack/react-query";
 import { useCheckProblems } from "@/hooks/useCheckProblems";
-import { isPreviewOpenAtom } from "@/atoms/viewAtoms";
+import { isPreviewOpenAtom } from "../../atoms/viewAtoms";
 
 export type PreviewMode =
   | "preview"
@@ -45,7 +45,7 @@ const BUTTON_CLASS_NAME =
 
 // Preview Header component with preview mode toggle
 export const PreviewHeader = () => {
-  const [previewMode, setPreviewMode] = useAtom(previewModeAtom);
+  const [previewMode, setPreviewMode] = useState("preview");
   const [isPreviewOpen, setIsPreviewOpen] = useAtom(isPreviewOpenAtom);
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const previewRef = useRef<HTMLButtonElement>(null);
@@ -55,8 +55,8 @@ export const PreviewHeader = () => {
   const publishRef = useRef<HTMLButtonElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const { problemReport } = useCheckProblems(selectedAppId);
-  const { restartApp, refreshAppIframe } = useRunApp();
+  const { problemReport } = useCheckProblems(selectedAppId || "0");
+  const { runApp } = useRunApp();
 
   const isCompact = windowWidth < 860;
 
@@ -80,8 +80,8 @@ export const PreviewHeader = () => {
   };
 
   const onCleanRestart = useCallback(() => {
-    restartApp({ removeNodeModules: true });
-  }, [restartApp]);
+    runApp({ appId: selectedAppId || "0" });
+  }, [runApp, selectedAppId]);
 
   const useClearSessionData = () => {
     return useMutation({
@@ -90,7 +90,7 @@ export const PreviewHeader = () => {
         return ipcClient.clearSessionData();
       },
       onSuccess: async () => {
-        await refreshAppIframe();
+        // await refreshAppIframe();
         showSuccess("Preview data cleared");
       },
       onError: (error) => {

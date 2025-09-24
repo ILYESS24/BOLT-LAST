@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 import { Label } from "@/components/ui/label";
 
-import { IpcClient } from "@/ipc/ipc_client";
+// import { IpcClient } from "@/ipc/ipc_client";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
 import { useSupabase } from "@/hooks/useSupabase";
@@ -39,12 +39,12 @@ import { useTheme } from "@/contexts/ThemeContext";
 
 export function SupabaseConnector({ appId }: { appId: number }) {
   const { settings, refreshSettings } = useSettings();
-  const { app, refreshApp } = useLoadApp(appId);
+  const { app, refreshApp } = useLoadApp();
   const { lastDeepLink } = useDeepLink();
   const { isDarkMode } = useTheme();
   useEffect(() => {
     const handleDeepLink = async () => {
-      if (lastDeepLink?.type === "supabase-oauth-return") {
+      if (lastDeepLink && "type" in lastDeepLink && lastDeepLink.type === "supabase-oauth-return") {
         await refreshSettings();
         await refreshApp();
       }
@@ -99,9 +99,9 @@ export function SupabaseConnector({ appId }: { appId: number }) {
               <Button
                 variant="outline"
                 onClick={() => {
-                  IpcClient.getInstance().openExternalUrl(
-                    `https://supabase.com/dashboard/project/${app.supabaseProjectId}`,
-                  );
+                  // IpcClient.getInstance().openExternalUrl(
+                  //   `https://supabase.com/dashboard/project/${app.supabaseProjectId}`,
+                  // );
                 }}
                 className="ml-2 px-2 py-1"
                 style={{ display: "inline-flex", alignItems: "center" }}
@@ -204,14 +204,14 @@ export function SupabaseConnector({ appId }: { appId: number }) {
         <img
           onClick={async () => {
             if (settings?.isTestMode) {
-              await IpcClient.getInstance().fakeHandleSupabaseConnect({
-                appId,
-                fakeProjectId: "fake-project-id",
-              });
+              // await IpcClient.getInstance().fakeHandleSupabaseConnect({
+              //   appId,
+              //   fakeProjectId: "fake-project-id",
+              // });
             } else {
-              await IpcClient.getInstance().openExternalUrl(
-                "https://supabase-oauth.dyad.sh/api/connect-supabase/login",
-              );
+              // await IpcClient.getInstance().openExternalUrl(
+              //   "https://supabase-oauth.dyad.sh/api/connect-supabase/login",
+              // );
             }
           }}
           src={isDarkMode ? connectSupabaseDark : connectSupabaseLight}

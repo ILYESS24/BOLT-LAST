@@ -1,6 +1,5 @@
 import log from "electron-log";
 
-import { createTestOnlyLoggedHandler } from "./safe_handle";
 import { handleNeonOAuthReturn } from "../../neon_admin/neon_return_handler";
 import {
   getNeonClient,
@@ -22,8 +21,6 @@ import { EndpointType } from "@neondatabase/api-client";
 import { retryOnLocked } from "../utils/retryOnLocked";
 
 export const logger = log.scope("neon_handlers");
-
-const testOnlyHandle = createTestOnlyLoggedHandler(logger);
 
 export function registerNeonHandlers() {
   // Do not use log handler because there's sensitive data in the response
@@ -216,7 +213,7 @@ export function registerNeonHandlers() {
     },
   );
 
-  testOnlyHandle("neon:fake-connect", async (event) => {
+  ipcMain.handle("neon:fake-connect", async (event) => {
     // Call handleNeonOAuthReturn with fake data
     handleNeonOAuthReturn({
       token: "fake-neon-access-token",

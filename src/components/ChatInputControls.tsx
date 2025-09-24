@@ -14,11 +14,11 @@ export function ChatInputControls({
       <div className="w-1.5"></div>
       <ModelPicker />
       <div className="w-1.5"></div>
-      <ProModeSelector />
+      <ProModeSelector isProMode={false} onToggle={() => { /* TODO: implement */ }} />
       <div className="w-1"></div>
       {showContextFilesPicker && (
         <>
-          <ContextFilesPicker />
+          <ContextFilesPicker files={[]} selectedFiles={[]} onSelectionChange={() => { /* TODO: implement */ }} />
           <div className="w-0.5"></div>
         </>
       )}

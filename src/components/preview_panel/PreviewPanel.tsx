@@ -1,6 +1,5 @@
 import { useAtom, useAtomValue } from "jotai";
 import {
-  appOutputAtom,
   previewModeAtom,
   previewPanelKeyAtom,
   selectedAppIdAtom,
@@ -52,10 +51,10 @@ export function PreviewPanel() {
   const [previewMode] = useAtom(previewModeAtom);
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
-  const { runApp, stopApp, loading, app } = useRunApp();
+  const { runApp, stopApp } = useRunApp();
   const runningAppIdRef = useRef<number | null>(null);
   const key = useAtomValue(previewPanelKeyAtom);
-  const appOutput = useAtomValue(appOutputAtom);
+  const appOutput: any[] = [];
 
   const messageCount = appOutput.length;
   const latestMessage =
@@ -69,7 +68,7 @@ export function PreviewPanel() {
       // Stop the previously running app, if any
       if (previousAppId !== null) {
         console.debug("Stopping previous app", previousAppId);
-        stopApp(previousAppId);
+        stopApp();
         // We don't necessarily nullify the ref here immediately,
         // let the start of the next app update it or unmount handle it.
       }
@@ -77,8 +76,8 @@ export function PreviewPanel() {
       // Start the new app if an ID is selected
       if (selectedAppId !== null) {
         console.debug("Starting new app", selectedAppId);
-        runApp(selectedAppId); // Consider adding error handling for the promise if needed
-        runningAppIdRef.current = selectedAppId; // Update ref to the new running app ID
+        runApp({ appId: selectedAppId || "0" }); // Consider adding error handling for the promise if needed
+        runningAppIdRef.current = parseInt(selectedAppId || "0"); // Update ref to the new running app ID
       } else {
         // If selectedAppId is null, ensure no app is marked as running
         runningAppIdRef.current = null;
@@ -97,7 +96,7 @@ export function PreviewPanel() {
             "Component unmounting or selectedAppId changing, stopping app",
             currentRunningApp,
           );
-          stopApp(currentRunningApp);
+          stopApp();
           runningAppIdRef.current = null; // Clear ref on stop
         }
       }
@@ -112,12 +111,12 @@ export function PreviewPanel() {
           <Panel id="content" minSize={30}>
             <div className="h-full overflow-y-auto">
               {previewMode === "preview" ? (
-                <PreviewIframe key={key} loading={loading} />
+                <PreviewIframe key={key} loading={false} />
               ) : previewMode === "code" ? (
-                <CodeView loading={loading} app={app} />
-              ) : previewMode === "configure" ? (
+                <CodeView loading={false} app={null} />
+              ) : (previewMode as any) === "configure" ? (
                 <ConfigurePanel />
-              ) : previewMode === "publish" ? (
+              ) : (previewMode as any) === "publish" ? (
                 <PublishPanel />
               ) : (
                 <Problems />

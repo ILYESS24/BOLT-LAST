@@ -1,111 +1,129 @@
-import { useState, useEffect, useCallback } from "react";
-import { useAtom } from "jotai";
-import { userSettingsAtom, envVarsAtom } from "@/atoms/appAtoms";
-import { IpcClient } from "@/ipc/ipc_client";
-import { type UserSettings } from "@/lib/schemas";
-import { usePostHog } from "posthog-js/react";
-import { useAppVersion } from "./useAppVersion";
+import { useState, useEffect, useCallback } from 'react';
 
-const TELEMETRY_CONSENT_KEY = "dyadTelemetryConsent";
-const TELEMETRY_USER_ID_KEY = "dyadTelemetryUserId";
-
-export function isTelemetryOptedIn() {
-  return window.localStorage.getItem(TELEMETRY_CONSENT_KEY) === "opted_in";
+export interface Settings {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  autoSave: boolean;
+  fontSize: number;
+  tabSize: number;
+  wordWrap: boolean;
+  minimap: boolean;
+  lineNumbers: boolean;
+  apiKey?: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  vercelAccessToken?: string;
+  enableAutoFixProblems?: boolean;
+  providerSettings?: Record<string, any>;
+  envVars?: Record<string, string>;
+  telemetryConsent?: 'opted_in' | 'opted_out' | 'unset';
+  acceptedCommunityCode?: boolean;
+  neon?: {
+    accessToken?: string;
+  };
+  selectedTemplateId?: string;
+  thinkingBudget?: 'low' | 'medium' | 'high';
+  supabase?: {
+    accessToken?: string;
+  };
+  isTestMode?: boolean;
+  enableSupabaseWriteSqlMigration?: boolean;
+  enableDyadPro?: boolean;
+  releaseChannel?: string;
+  runtimeMode2?: string;
 }
 
-export function getTelemetryUserId(): string | null {
-  return window.localStorage.getItem(TELEMETRY_USER_ID_KEY);
-}
-
-let isInitialLoad = false;
+const defaultSettings: Settings = {
+  theme: 'system',
+  language: 'en',
+  autoSave: true,
+  fontSize: 14,
+  tabSize: 2,
+  wordWrap: true,
+  minimap: true,
+  lineNumbers: true,
+  model: 'gpt-4',
+  temperature: 0.7,
+  maxTokens: 2000,
+};
 
 export function useSettings() {
-  const posthog = usePostHog();
-  const [settings, setSettingsAtom] = useAtom(userSettingsAtom);
-  const [envVars, setEnvVarsAtom] = useAtom(envVarsAtom);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const appVersion = useAppVersion();
-  const loadInitialData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const ipcClient = IpcClient.getInstance();
-      // Fetch settings and env vars concurrently
-      const [userSettings, fetchedEnvVars] = await Promise.all([
-        ipcClient.getUserSettings(),
-        ipcClient.getEnvVars(),
-      ]);
-      processSettingsForTelemetry(userSettings);
-      if (!isInitialLoad && appVersion) {
-        posthog.capture("app:initial-load", {
-          isPro: Boolean(userSettings.providerSettings?.auto?.apiKey?.value),
-          appVersion,
-        });
-        isInitialLoad = true;
-      }
-      setSettingsAtom(userSettings);
-      setEnvVarsAtom(fetchedEnvVars);
-      setError(null);
-    } catch (error) {
-      console.error("Error loading initial data:", error);
-      setError(error instanceof Error ? error : new Error(String(error)));
-    } finally {
-      setLoading(false);
-    }
-  }, [setSettingsAtom, setEnvVarsAtom, appVersion]);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Charger les paramètres depuis le stockage local
   useEffect(() => {
-    // Only run once on mount, dependencies are stable getters/setters
-    loadInitialData();
-  }, [loadInitialData]);
+    const loadSettings = async () => {
+      try {
+        const stored = localStorage.getItem('dyad-settings');
+        if (stored) {
+          const parsedSettings = JSON.parse(stored);
+          setSettings({ ...defaultSettings, ...parsedSettings });
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        setError('Failed to load settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const updateSettings = async (newSettings: Partial<UserSettings>) => {
-    setLoading(true);
-    try {
-      const ipcClient = IpcClient.getInstance();
-      const updatedSettings = await ipcClient.setUserSettings(newSettings);
-      setSettingsAtom(updatedSettings);
-      processSettingsForTelemetry(updatedSettings);
+    loadSettings();
+  }, []);
 
-      setError(null);
-      return updatedSettings;
-    } catch (error) {
-      console.error("Error updating settings:", error);
-      setError(error instanceof Error ? error : new Error(String(error)));
-      throw error;
-    } finally {
-      setLoading(false);
+  // Sauvegarder les paramètres
+  const updateSettings = useCallback((newSettings: Partial<Settings>) => {
+    setSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      localStorage.setItem('dyad-settings', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // Réinitialiser les paramètres
+  const resetSettings = useCallback(() => {
+    setSettings(defaultSettings);
+    localStorage.removeItem('dyad-settings');
+  }, []);
+
+  // Fonction pour rafraîchir les paramètres
+  const refreshSettings = useCallback(() => {
+    // Recharger les paramètres depuis le stockage local
+    const stored = localStorage.getItem('dyad-settings');
+    if (stored) {
+      const parsedSettings = JSON.parse(stored);
+      setSettings({ ...defaultSettings, ...parsedSettings });
     }
-  };
+  }, []);
 
   return {
     settings,
-    envVars,
-    loading,
-    error,
     updateSettings,
-
-    refreshSettings: () => {
-      return loadInitialData();
-    },
+    resetSettings,
+    refreshSettings,
+    isLoading,
+    loading: isLoading,
+    error,
+    envVars: settings.envVars || {},
   };
 }
 
-function processSettingsForTelemetry(settings: UserSettings) {
-  if (settings.telemetryConsent) {
-    window.localStorage.setItem(
-      TELEMETRY_CONSENT_KEY,
-      settings.telemetryConsent,
-    );
-  } else {
-    window.localStorage.removeItem(TELEMETRY_CONSENT_KEY);
+// Fonctions utilitaires pour la télémétrie
+export function getTelemetryUserId(): string {
+  const stored = localStorage.getItem('dyad-telemetry-user-id');
+  if (stored) {
+    return stored;
   }
-  if (settings.telemetryUserId) {
-    window.localStorage.setItem(
-      TELEMETRY_USER_ID_KEY,
-      settings.telemetryUserId,
-    );
-  } else {
-    window.localStorage.removeItem(TELEMETRY_USER_ID_KEY);
-  }
+  
+  // Générer un nouvel ID utilisateur
+  const newId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  localStorage.setItem('dyad-telemetry-user-id', newId);
+  return newId;
+}
+
+export function isTelemetryOptedIn(): boolean {
+  const stored = localStorage.getItem('dyad-telemetry-consent');
+  return stored === 'accepted';
 }

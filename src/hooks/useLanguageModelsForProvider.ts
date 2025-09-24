@@ -22,7 +22,19 @@ export function useLanguageModelsForProvider(providerId: string | undefined) {
         // Return an empty array as it's a query, not an error state
         return [];
       }
-      return ipcClient.getLanguageModels({ providerId });
+      const models = await ipcClient.getLanguageModelsForProvider(providerId);
+      return models.map((model: any) => ({
+        id: model.id || Date.now(),
+        apiName: model.apiName || model.name,
+        displayName: model.displayName || model.name,
+        description: model.description || "",
+        tag: model.tag,
+        maxOutputTokens: model.maxOutputTokens,
+        contextWindow: model.contextWindow,
+        temperature: model.temperature,
+        dollarSigns: model.dollarSigns,
+        type: model.type || "custom",
+      }));
     },
     enabled: !!providerId,
   });

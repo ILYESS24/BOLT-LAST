@@ -1,0 +1,29 @@
+# Variables d'environnement pour Netlify
+# Copiez ces variables dans Netlify > Site settings > Environment variables
+
+# Configuration de l'application
+VITE_APP_NAME=Dyad
+VITE_APP_VERSION=0.20.0-beta.1
+VITE_APP_DESCRIPTION=Constructeur d'applications IA
+
+# URLs de l'API (remplacez par vos URLs de production)
+VITE_API_URL=https://your-backend.netlify.app
+VITE_WS_URL=wss://your-backend.netlify.app
+
+# Configuration des modèles IA
+VITE_DEFAULT_MODEL=gpt-4
+VITE_FALLBACK_MODEL=gpt-3.5-turbo
+
+# Configuration des intégrations (optionnel)
+VITE_GITHUB_CLIENT_ID=your_github_client_id
+VITE_VERCEL_CLIENT_ID=your_vercel_client_id
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Configuration de l'analytics (optionnel)
+VITE_POSTHOG_KEY=your_posthog_key
+VITE_POSTHOG_HOST=https://app.posthog.com
+
+# Mode de développement
+VITE_DEV_MODE=false
+VITE_DEBUG=false

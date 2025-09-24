@@ -38,10 +38,7 @@ export const DyadOutput: React.FC<DyadOutputProps> = ({
   const handleAIFix = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (message && selectedChatId) {
-      streamMessage({
-        prompt: `Fix the error: ${message}`,
-        chatId: selectedChatId,
-      });
+      streamMessage(`Fix the error: ${message}`);
     }
   };
 

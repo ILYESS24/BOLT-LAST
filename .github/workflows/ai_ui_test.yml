@@ -1,0 +1,361 @@
+name: AI UI Tests - E2E avec Simulation Humaine
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Exécuter les tests tous les jours à 2h du matin
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type de test à exécuter'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - smoke
+        - visual
+        - performance
+
+env:
+  NODE_VERSION: '18'
+  PLAYWRIGHT_BROWSERS_PATH: 0
+
+jobs:
+  # Job de préparation
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      app-url: ${{ steps.app-url.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd packages/ci
+          npx playwright install --with-deps
+
+      - name: Build application
+        run: |
+          npm run build
+          cd web-migration/frontend && npm run build
+          cd ../backend && npm run build
+
+      - name: Start application
+        run: |
+          # Démarrer le backend
+          cd web-migration/backend
+          npm start &
+          BACKEND_PID=$!
+          echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
+          
+          # Démarrer le frontend
+          cd ../frontend
+          npm start &
+          FRONTEND_PID=$!
+          echo "FRONTEND_PID=$FRONTEND_PID" >> $GITHUB_ENV
+          
+          # Attendre que les services soient prêts
+          sleep 30
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Wait for application to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f http://localhost:3001/api/health; do sleep 2; done'
+
+      - name: Set app URL
+        id: app-url
+        run: echo "url=http://localhost:3000" >> $GITHUB_OUTPUT
+
+  # Tests E2E principaux
+  e2e-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+        test-type: [smoke, full]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd packages/ci
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run E2E tests
+        run: |
+          cd packages/ci
+          npx playwright test \
+            --project=${{ matrix.browser }} \
+            --reporter=html,json,junit \
+            --output-dir=test-results/${{ matrix.browser }}-${{ matrix.test-type }} \
+            --grep="${{ matrix.test-type == 'smoke' && 'smoke' || '' }}"
+        env:
+          BASE_URL: ${{ needs.setup.outputs.app-url }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.browser }}-${{ matrix.test-type }}
+          path: packages/ci/test-results/${{ matrix.browser }}-${{ matrix.test-type }}/
+          retention-days: 30
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}-${{ matrix.test-type }}
+          path: packages/ci/playwright-report/
+          retention-days: 30
+
+  # Tests visuels avec Percy
+  visual-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event.inputs.test_type == 'visual'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd packages/ci
+          npx playwright install --with-deps
+
+      - name: Run visual tests
+        run: |
+          cd packages/ci
+          npx playwright test --grep="visual" --reporter=html,json
+        env:
+          BASE_URL: ${{ needs.setup.outputs.app-url }}
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
+      - name: Percy visual testing
+        uses: percy/exec-action@v1
+        with:
+          custom-command: |
+            cd packages/ci
+            npx playwright test --grep="visual" --reporter=percy
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+
+  # Tests de performance
+  performance-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'performance'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd packages/ci
+          npx playwright install --with-deps
+
+      - name: Run performance tests
+        run: |
+          cd packages/ci
+          npx playwright test --grep="performance" --reporter=html,json
+        env:
+          BASE_URL: ${{ needs.setup.outputs.app-url }}
+
+      - name: Generate performance report
+        run: |
+          cd packages/ci
+          npx playwright show-report --port 8080 &
+          sleep 5
+          curl -X POST http://localhost:8080/api/reports \
+            -H "Content-Type: application/json" \
+            -d '{"type": "performance", "results": "test-results.json"}'
+
+  # Tests cross-device avec BrowserStack
+  cross-device-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'full'
+    strategy:
+      matrix:
+        device: [iPhone 12, Pixel 5, iPad Pro, Galaxy S21]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Run cross-device tests
+        run: |
+          cd packages/ci
+          npx playwright test --project="${{ matrix.device }}" --reporter=html,json
+        env:
+          BASE_URL: ${{ needs.setup.outputs.app-url }}
+          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  # Génération de tests avec AI
+  ai-test-generation:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'full'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Generate AI tests
+        run: |
+          cd packages/ci
+          npx playwright test --grep="ai-generation" --reporter=html,json
+        env:
+          BASE_URL: ${{ needs.setup.outputs.app-url }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+
+  # Évaluation avec LangSmith
+  langsmith-evaluation:
+    needs: [e2e-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd packages/ci && npm ci
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          merge-multiple: true
+
+      - name: Run LangSmith evaluation
+        run: |
+          cd packages/ci
+          node tests/e2e/prompt-eval.js
+        env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+
+  # Nettoyage
+  cleanup:
+    needs: [e2e-tests, visual-tests, performance-tests, cross-device-tests, ai-test-generation]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Stop application
+        run: |
+          if [ ! -z "$BACKEND_PID" ]; then
+            kill $BACKEND_PID || true
+          fi
+          if [ ! -z "$FRONTEND_PID" ]; then
+            kill $FRONTEND_PID || true
+          fi
+
+  # Rapport final
+  report:
+    needs: [e2e-tests, visual-tests, performance-tests, cross-device-tests, ai-test-generation, langsmith-evaluation]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate final report
+        run: |
+          echo "## 🧪 Rapport des Tests E2E AI App Builder" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Tests Exécutés" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests E2E: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests Visuels: ${{ needs.visual-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests de Performance: ${{ needs.performance-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests Cross-Device: ${{ needs.cross-device-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Génération AI: ${{ needs.ai-test-generation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Évaluation LangSmith: ${{ needs.langsmith-evaluation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Détails" >> $GITHUB_STEP_SUMMARY
+          echo "Consultez les artefacts pour les rapports détaillés et les captures d'écran." >> $GITHUB_STEP_SUMMARY

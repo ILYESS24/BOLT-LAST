@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useSettings } from "@/hooks/useSettings";
 import { showError } from "@/lib/toast";
-import { IpcClient } from "@/ipc/ipc_client";
+// import { IpcClient } from "@/ipc/ipc_client";
 
 export function RuntimeModeSelector() {
   const { settings, updateSettings } = useSettings();
@@ -58,11 +58,11 @@ export function RuntimeModeSelector() {
           <button
             type="button"
             className="underline font-medium cursor-pointer"
-            onClick={() =>
-              IpcClient.getInstance().openExternalUrl(
-                "https://www.docker.com/products/docker-desktop/",
-              )
-            }
+            onClick={() => {
+              // IpcClient.getInstance().openExternalUrl(
+              //   "https://www.docker.com/products/docker-desktop/",
+              // );
+            }}
           >
             Docker Desktop
           </button>{" "}

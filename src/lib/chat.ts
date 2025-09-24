@@ -11,7 +11,16 @@ export async function createApp(
   params: CreateAppParams,
 ): Promise<CreateAppResult> {
   try {
-    return await IpcClient.getInstance().createApp(params);
+    const app = await IpcClient.getInstance().createApp(params);
+    return { 
+      app: { 
+        ...app, 
+        id: parseInt(app.id) || 0,
+        createdAt: app.createdAt.toString(),
+        updatedAt: app.updatedAt.toString()
+      }, 
+      chatId: 0 
+    };
   } catch (error) {
     console.error("[CHAT] Error creating app:", error);
     throw error;
@@ -25,7 +34,7 @@ export async function createApp(
  */
 export async function getAllChats(appId?: number): Promise<ChatSummary[]> {
   try {
-    return await IpcClient.getInstance().getChats(appId);
+    return await IpcClient.getInstance().getChats(appId?.toString() || "0");
   } catch (error) {
     console.error("[CHAT] Error getting all chats:", error);
     throw error;

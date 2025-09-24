@@ -3,25 +3,20 @@ import { db } from "../../db";
 import { eq } from "drizzle-orm";
 import { apps } from "../../db/schema";
 import { getSupabaseClient } from "../../supabase_admin/supabase_management_client";
-import {
-  createLoggedHandler,
-  createTestOnlyLoggedHandler,
-} from "./safe_handle";
 import { handleSupabaseOAuthReturn } from "../../supabase_admin/supabase_return_handler";
 import { safeSend } from "../utils/safe_sender";
+import { ipcMain } from "electron";
 
 const logger = log.scope("supabase_handlers");
-const handle = createLoggedHandler(logger);
-const testOnlyHandle = createTestOnlyLoggedHandler(logger);
 
 export function registerSupabaseHandlers() {
-  handle("supabase:list-projects", async () => {
+  ipcMain.handle("supabase:list-projects", async () => {
     const supabase = await getSupabaseClient();
     return supabase.getProjects();
   });
 
   // Set app project - links a Dyad app to a Supabase project
-  handle(
+  ipcMain.handle(
     "supabase:set-app-project",
     async (_, { project, app }: { project: string; app: number }) => {
       await db
@@ -34,7 +29,7 @@ export function registerSupabaseHandlers() {
   );
 
   // Unset app project - removes the link between a Dyad app and a Supabase project
-  handle("supabase:unset-app-project", async (_, { app }: { app: number }) => {
+  ipcMain.handle("supabase:unset-app-project", async (_, { app }: { app: number }) => {
     await db
       .update(apps)
       .set({ supabaseProjectId: null })
@@ -43,7 +38,7 @@ export function registerSupabaseHandlers() {
     logger.info(`Removed Supabase project association for app ${app}`);
   });
 
-  testOnlyHandle(
+  ipcMain.handle(
     "supabase:fake-connect-and-set-project",
     async (
       event,

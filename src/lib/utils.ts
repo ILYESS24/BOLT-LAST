@@ -1,207 +1,104 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Generates a cute app name.
- */
+export function formatDate(date: Date | string): string {
+  const d = new Date(date);
+  return d.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+export function formatTime(date: Date | string): string {
+  const d = new Date(date);
+  return d.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function formatDateTime(date: Date | string): string {
+  return `${formatDate(date)} à ${formatTime(date)}`;
+}
+
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+}
+
+export function generateId(): string {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function copyToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard) {
+    return navigator.clipboard.writeText(text);
+  } else {
+    // Fallback pour les navigateurs plus anciens
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return Promise.resolve();
+  }
+}
+
 export function generateCuteAppName(): string {
-  const adjectives = [
-    "happy",
-    "gentle",
-    "brave",
-    "clever",
-    "swift",
-    "bright",
-    "calm",
-    "nimble",
-    "sleepy",
-    "fluffy",
-    "wild",
-    "tiny",
-    "bold",
-    "wise",
-    "merry",
-    "quick",
-    "busy",
-    "silent",
-    "cozy",
-    "jolly",
-    "playful",
-    "friendly",
-    "curious",
-    "peaceful",
-    "silly",
-    "dazzling",
-    "graceful",
-    "elegant",
-    "cosmic",
-    "whispering",
-    "dancing",
-    "sparkling",
-    "mystical",
-    "vibrant",
-    "radiant",
-    "dreamy",
-    "patient",
-    "energetic",
-    "vigilant",
-    "sincere",
-    "electric",
-    "stellar",
-    "lunar",
-    "serene",
-    "mighty",
-    "magical",
-    "neon",
-    "azure",
-    "crimson",
-    "emerald",
-    "golden",
-    "jade",
-    "crystal",
-    "snuggly",
-    "glowing",
-    "wandering",
-    "whistling",
-    "bubbling",
-    "floating",
-    "flying",
-    "hopping",
-  ];
-
-  const animals = [
-    "fox",
-    "panda",
-    "rabbit",
-    "wolf",
-    "bear",
-    "owl",
-    "koala",
-    "beaver",
-    "ferret",
-    "squirrel",
-    "zebra",
-    "tiger",
-    "lynx",
-    "lemur",
-    "penguin",
-    "otter",
-    "hedgehog",
-    "deer",
-    "badger",
-    "raccoon",
-    "turtle",
-    "dolphin",
-    "eagle",
-    "falcon",
-    "parrot",
-    "capybara",
-    "axolotl",
-    "narwhal",
-    "wombat",
-    "meerkat",
-    "platypus",
-    "mongoose",
-    "chinchilla",
-    "quokka",
-    "alpaca",
-    "chameleon",
-    "ocelot",
-    "manatee",
-    "puffin",
-    "shiba",
-    "sloth",
-    "gecko",
-    "hummingbird",
-    "mantis",
-    "jellyfish",
-    "pangolin",
-    "okapi",
-    "binturong",
-    "tardigrade",
-    "beluga",
-    "kiwi",
-    "octopus",
-    "salamander",
-    "seahorse",
-    "kookaburra",
-    "gibbon",
-    "jackrabbit",
-    "lobster",
-    "iguana",
-    "tamarin",
-    "armadillo",
-    "starfish",
-    "walrus",
-    "phoenix",
-    "griffin",
-    "dragon",
-    "unicorn",
-    "kraken",
-  ];
-
-  const verbs = [
-    "run",
-    "hop",
-    "dash",
-    "zoom",
-    "skip",
-    "jump",
-    "glow",
-    "play",
-    "chirp",
-    "buzz",
-    "flip",
-    "flit",
-    "soar",
-    "dive",
-    "swim",
-    "climb",
-    "sprint",
-    "wiggle",
-    "twirl",
-    "pounce",
-    "bop",
-    "spin",
-    "hum",
-    "roll",
-    "blink",
-    "skid",
-    "kick",
-    "drift",
-    "bloom",
-    "burst",
-    "slide",
-    "bounce",
-    "crawl",
-    "sniff",
-    "peek",
-    "scurry",
-    "nudge",
-    "snap",
-    "swoop",
-    "roam",
-    "trot",
-    "dart",
-    "yawn",
-    "snore",
-    "hug",
-    "nap",
-    "chase",
-    "rest",
-    "wag",
-    "bob",
-    "beam",
-    "cheer",
-  ];
-
-  const randomAdjective =
-    adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
-  const randomVerb = verbs[Math.floor(Math.random() * verbs.length)];
-  return `${randomAdjective}-${randomAnimal}-${randomVerb}`;
+  const adjectives = ['Super', 'Amazing', 'Fantastic', 'Wonderful', 'Brilliant', 'Awesome', 'Incredible', 'Magnificent'];
+  const nouns = ['App', 'Project', 'Creation', 'Masterpiece', 'Wonder', 'Gem', 'Treasure', 'Jewel'];
+  
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  
+  return `${randomAdjective} ${randomNoun}`;
 }

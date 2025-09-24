@@ -9,8 +9,8 @@ import {
   TextStreamPart,
 } from "ai";
 import { db } from "../../db";
-import { chats, messages } from "../../db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { chats, messages , prompts as promptsTable } from "../../db/schema";
+import { and, eq, isNull , inArray } from "drizzle-orm";
 import {
   constructSystemPrompt,
   readAiRules,
@@ -24,8 +24,8 @@ import { readSettings } from "../../main/settings";
 import type { ChatResponseEnd, ChatStreamParams } from "../ipc_types";
 import { extractCodebase, readFileWithCache } from "../../utils/codebase";
 import { processFullResponseActions } from "../processors/response_processor";
-import { streamTestResponse } from "./testing_chat_handlers";
-import { getTestResponse } from "./testing_chat_handlers";
+import { streamTestResponse , getTestResponse } from "./testing_chat_handlers";
+
 import { getModelClient, ModelClient } from "../utils/get_model_client";
 import log from "electron-log";
 import {
@@ -61,8 +61,8 @@ import { FileUploadsState } from "../utils/file_uploads_state";
 import { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
 import { extractMentionedAppsCodebases } from "../utils/mention_apps";
 import { parseAppMentions } from "@/shared/parse_mention_apps";
-import { prompts as promptsTable } from "../../db/schema";
-import { inArray } from "drizzle-orm";
+
+
 import { replacePromptReference } from "../utils/replacePromptReference";
 
 type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
@@ -226,7 +226,7 @@ export function registerChatStreamHandlers() {
 
       // Process attachments if any
       let attachmentInfo = "";
-      let attachmentPaths: string[] = [];
+      const attachmentPaths: string[] = [];
 
       if (req.attachments && req.attachments.length > 0) {
         attachmentInfo = "\n\nAttachments:\n";
@@ -411,7 +411,13 @@ ${componentSnippet}
         // Extract codebase for current app
         const { formattedOutput: codebaseInfo, files } = await extractCodebase({
           appPath,
-          chatContext,
+          chatContext: {
+            ...chatContext,
+            appId: (event as any).appId?.toString() || "",
+            chatId: chat.id.toString(),
+            excludePaths: (chatContext as any).excludePaths || [],
+            lastUpdated: new Date().toISOString(),
+          },
         });
 
         // Extract codebases for mentioned apps
@@ -445,7 +451,7 @@ ${componentSnippet}
           codebaseInfo.length / 4,
         );
         const { modelClient, isEngineEnabled } = await getModelClient(
-          settings.selectedModel,
+          settings.selectedModel || { id: "default", name: "default", provider: "default" },
           settings,
           files,
         );
@@ -509,14 +515,14 @@ ${componentSnippet}
         }
         if (
           updatedChat.app?.supabaseProjectId &&
-          settings.supabase?.accessToken?.value
+          typeof settings.supabase?.accessToken === 'string' ? settings.supabase.accessToken : (settings.supabase?.accessToken as any)?.value
         ) {
           systemPrompt +=
             "\n\n" +
             SUPABASE_AVAILABLE_SYSTEM_PROMPT +
             "\n\n" +
             (await getSupabaseContext({
-              supabaseProjectId: updatedChat.app.supabaseProjectId,
+              supabaseProjectId: updatedChat.app.supabaseProjectId || "",
             }));
         } else if (
           // Neon projects don't need Supabase.
@@ -668,8 +674,8 @@ This conversation includes one or more image attachments. When the user uploads 
             logger.log("sending AI request");
           }
           return streamText({
-            maxOutputTokens: await getMaxTokens(settings.selectedModel),
-            temperature: await getTemperature(settings.selectedModel),
+            maxOutputTokens: await getMaxTokens(settings.selectedModel || { id: "default", name: "default", provider: "default" }),
+            temperature: await getTemperature(settings.selectedModel || { id: "default", name: "default", provider: "default" }),
             maxRetries: 2,
             model: modelClient.model,
             providerOptions: {
@@ -865,11 +871,17 @@ ${problemReport.problems
                 const { formattedOutput: codebaseInfo, files } =
                   await extractCodebase({
                     appPath,
-                    chatContext,
+                    chatContext: {
+            ...chatContext,
+            appId: (event as any).appId?.toString() || "",
+            chatId: chat.id.toString(),
+            excludePaths: (chatContext as any).excludePaths || [],
+            lastUpdated: new Date().toISOString(),
+          },
                     virtualFileSystem,
                   });
                 const { modelClient } = await getModelClient(
-                  settings.selectedModel,
+                  settings.selectedModel || { id: "default", name: "default", provider: "default" },
                   settings,
                   files,
                 );

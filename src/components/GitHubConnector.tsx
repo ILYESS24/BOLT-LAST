@@ -81,7 +81,7 @@ function ConnectedGitHubConnector({
     setIsDisconnecting(true);
     setDisconnectError(null);
     try {
-      await IpcClient.getInstance().disconnectGithubRepo(appId);
+      await IpcClient.getInstance().disconnectGithubRepo(appId.toString());
       refreshApp();
     } catch (err: any) {
       setDisconnectError(err.message || "Failed to disconnect repository.");
@@ -91,17 +91,16 @@ function ConnectedGitHubConnector({
   };
 
   const handleSyncToGithub = useCallback(
-    async (force: boolean = false) => {
+    async (_force = false) => {
       setIsSyncing(true);
       setSyncError(null);
       setSyncSuccess(false);
       setShowForceDialog(false);
 
       try {
-        const result = await IpcClient.getInstance().syncGithubRepo(
-          appId,
-          force,
-        );
+        const result = await IpcClient.getInstance().syncGithubRepo({
+          appId: appId?.toString() || "",
+        });
         if (result.success) {
           setSyncSuccess(true);
         } else {
@@ -350,7 +349,7 @@ function UnconnectedGitHubConnector({
     setGithubStatusMessage("Requesting device code from GitHub...");
 
     // Send IPC message to main process to start the flow
-    IpcClient.getInstance().startGithubDeviceFlow(appId);
+    IpcClient.getInstance().startGithubDeviceFlow(appId.toString());
   };
 
   useEffect(() => {
@@ -359,7 +358,7 @@ function UnconnectedGitHubConnector({
     const cleanupFunctions: (() => void)[] = [];
 
     // Listener for updates (user code, verification uri, status messages)
-    const removeUpdateListener =
+    const _removeUpdateListener =
       IpcClient.getInstance().onGithubDeviceFlowUpdate((data) => {
         console.log("Received github:flow-update", data);
         if (data.userCode) {
@@ -381,10 +380,10 @@ function UnconnectedGitHubConnector({
           setIsConnectingToGithub(true); // Still connecting until success/error
         }
       });
-    cleanupFunctions.push(removeUpdateListener);
+    // cleanupFunctions.push(removeUpdateListener);
 
     // Listener for success
-    const removeSuccessListener =
+    const _removeSuccessListener =
       IpcClient.getInstance().onGithubDeviceFlowSuccess((data) => {
         console.log("Received github:flow-success", data);
         setGithubStatusMessage("Successfully connected to GitHub!");
@@ -395,10 +394,10 @@ function UnconnectedGitHubConnector({
         refreshSettings();
         setIsExpanded(true);
       });
-    cleanupFunctions.push(removeSuccessListener);
+    // cleanupFunctions.push(removeSuccessListener);
 
     // Listener for errors
-    const removeErrorListener = IpcClient.getInstance().onGithubDeviceFlowError(
+    const _removeErrorListener = IpcClient.getInstance().onGithubDeviceFlowError(
       (data) => {
         console.log("Received github:flow-error", data);
         setGithubError(data.error || "An unknown error occurred.");
@@ -408,7 +407,7 @@ function UnconnectedGitHubConnector({
         setIsConnectingToGithub(false);
       },
     );
-    cleanupFunctions.push(removeErrorListener);
+    // cleanupFunctions.push(removeErrorListener);
 
     // Cleanup function to remove all listeners when component unmounts or appId changes
     return () => {
@@ -432,7 +431,7 @@ function UnconnectedGitHubConnector({
   const loadAvailableRepos = async () => {
     setIsLoadingRepos(true);
     try {
-      const repos = await IpcClient.getInstance().listGithubRepos();
+      const repos = await IpcClient.getInstance().listGithubRepos({ appId: appId?.toString() || "" });
       setAvailableRepos(repos);
     } catch (error) {
       console.error("Failed to load GitHub repos:", error);
@@ -455,11 +454,11 @@ function UnconnectedGitHubConnector({
     setBranchInputMode("select"); // Reset to select mode when loading new repo
     setCustomBranchName(""); // Clear custom branch name
     try {
-      const [owner, repo] = selectedRepo.split("/");
-      const branches = await IpcClient.getInstance().getGithubRepoBranches(
-        owner,
-        repo,
-      );
+      const [_owner, repo] = selectedRepo.split("/");
+      const branches = await IpcClient.getInstance().getGithubRepoBranches({
+        appId: appId?.toString() || "",
+        repoName: repo,
+      });
       setAvailableBranches(branches);
       // Default to main if available, otherwise first branch
       const defaultBranch =
@@ -482,10 +481,10 @@ function UnconnectedGitHubConnector({
       if (!name) return;
       setIsCheckingRepo(true);
       try {
-        const result = await IpcClient.getInstance().checkGithubRepoAvailable(
-          githubOrg,
-          name,
-        );
+        const result = await IpcClient.getInstance().checkGithubRepoAvailable({
+          appId: appId?.toString() || "",
+          repoName: name,
+        });
         setRepoAvailable(result.available);
         if (!result.available) {
           setRepoCheckError(
@@ -523,22 +522,20 @@ function UnconnectedGitHubConnector({
 
     try {
       if (repoSetupMode === "create") {
-        await IpcClient.getInstance().createGithubRepo(
-          githubOrg,
+        await IpcClient.getInstance().createGithubRepo({
+          appId: appId?.toString() || "",
           repoName,
-          appId,
-          selectedBranch,
-        );
+          isPrivate: false,
+        });
       } else {
-        const [owner, repo] = selectedRepo.split("/");
+        const [_owner, repo] = selectedRepo.split("/");
         const branchToUse =
           branchInputMode === "custom" ? customBranchName : selectedBranch;
-        await IpcClient.getInstance().connectToExistingGithubRepo(
-          owner,
-          repo,
-          branchToUse,
-          appId,
-        );
+        await IpcClient.getInstance().connectToExistingGithubRepo({
+          appId: appId?.toString() || "",
+          repoName: repo,
+          branchName: branchToUse,
+        });
       }
 
       setCreateRepoSuccess(true);
@@ -905,7 +902,7 @@ export function GitHubConnector({
   folderName,
   expanded,
 }: GitHubConnectorProps) {
-  const { app, refreshApp } = useLoadApp(appId);
+  const { app, refreshApp } = useLoadApp(appId?.toString());
   const { settings, refreshSettings } = useSettings();
   const [pendingAutoSync, setPendingAutoSync] = useState(false);
 

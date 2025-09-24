@@ -1,0 +1,20 @@
+# Redirections personnalisées pour Netlify
+# Ce fichier sera copié dans le répertoire dist lors du build
+
+# Redirection pour les API routes
+/api/* /.netlify/functions/:splat 200
+
+# Redirection pour les assets
+/assets/* /assets/:splat 200
+
+# Redirection pour les fichiers statiques
+/favicon.ico /favicon.ico 200
+/robots.txt /robots.txt 200
+/sitemap.xml /sitemap.xml 200
+
+# Redirection pour les pages d'erreur
+/404 /index.html 404
+/500 /index.html 500
+
+# Redirection pour les routes SPA
+/* /index.html 200

@@ -18,7 +18,7 @@ export const PortalMigrate = ({ appId }: PortalMigrateProps) => {
   const migrateMutation = useMutation({
     mutationFn: async () => {
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.portalMigrateCreate({ appId });
+      return ipcClient.portalMigrateCreate({ appId: appId.toString() });
     },
     onSuccess: (result) => {
       setOutput(result.output);

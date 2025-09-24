@@ -1,5 +1,5 @@
-import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
+import { ipcMain } from "electron";
 import { db } from "../../db";
 import { apps } from "../../db/schema";
 import { eq } from "drizzle-orm";
@@ -10,7 +10,6 @@ import { simpleSpawn } from "../utils/simpleSpawn";
 import { IS_TEST_BUILD } from "../utils/test_utils";
 
 const logger = log.scope("capacitor_handlers");
-const handle = createLoggedHandler(logger);
 
 async function getApp(appId: number) {
   const app = await db.query.apps.findFirst({
@@ -35,7 +34,7 @@ function isCapacitorInstalled(appPath: string): boolean {
 }
 
 export function registerCapacitorHandlers() {
-  handle(
+  ipcMain.handle(
     "is-capacitor",
     async (_, { appId }: { appId: number }): Promise<boolean> => {
       const app = await getApp(appId);
@@ -58,7 +57,7 @@ export function registerCapacitorHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "sync-capacitor",
     async (_, { appId }: { appId: number }): Promise<void> => {
       const app = await getApp(appId);
@@ -88,7 +87,7 @@ export function registerCapacitorHandlers() {
     },
   );
 
-  handle("open-ios", async (_, { appId }: { appId: number }): Promise<void> => {
+  ipcMain.handle("open-ios", async (_, { appId }: { appId: number }): Promise<void> => {
     const app = await getApp(appId);
     const appPath = getDyadAppPath(app.path);
 
@@ -110,7 +109,7 @@ export function registerCapacitorHandlers() {
     });
   });
 
-  handle(
+  ipcMain.handle(
     "open-android",
     async (_, { appId }: { appId: number }): Promise<void> => {
       const app = await getApp(appId);

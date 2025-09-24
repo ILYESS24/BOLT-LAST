@@ -1,6 +1,6 @@
 import { createRoute } from "@tanstack/react-router";
 import { rootRoute } from "./root";
-import AppDetailsPage from "../pages/app-details";
+import { AppDetailsPage } from "../pages/app-details";
 import { z } from "zod";
 
 export const appDetailsRoute = createRoute({

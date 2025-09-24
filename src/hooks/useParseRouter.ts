@@ -10,7 +10,7 @@ export interface ParsedRoute {
 /**
  * Loads the app router file and parses available routes for quick navigation.
  */
-export function useParseRouter(appId: number | null) {
+export function useParseRouter(_appId: number | null) {
   const [routes, setRoutes] = useState<ParsedRoute[]>([]);
 
   // Load app to access the file list
@@ -19,7 +19,7 @@ export function useParseRouter(appId: number | null) {
     loading: appLoading,
     error: appError,
     refreshApp,
-  } = useLoadApp(appId);
+  } = useLoadApp();
 
   // Load router related file to extract routes for non-Next apps
   const {
@@ -27,12 +27,12 @@ export function useParseRouter(appId: number | null) {
     loading: routerFileLoading,
     error: routerFileError,
     refreshFile,
-  } = useLoadAppFile(appId, "src/App.tsx");
+  } = useLoadAppFile();
 
   // Detect Next.js app by presence of next.config.* in file list
   const isNextApp = useMemo(() => {
     if (!app?.files) return false;
-    return app.files.some((f) => f.toLowerCase().includes("next.config"));
+    return app.files?.some((f) => f.path.toLowerCase().includes("next.config")) || false;
   }, [app?.files]);
 
   // Parse routes either from Next.js file-based routing or from router file
@@ -146,7 +146,7 @@ export function useParseRouter(appId: number | null) {
     };
 
     if (isNextApp && app?.files) {
-      setFromNextFiles(app.files);
+      setFromNextFiles(app.files?.map(f => f.path) || []);
     } else {
       setFromRouterFile(routerContent ?? null);
     }

@@ -1,0 +1,52 @@
+{
+  "name": "@dyad/ci-tests",
+  "version": "1.0.0",
+  "description": "Tests E2E automatisés pour l'AI App Builder avec simulation humaine",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ci": "playwright test --reporter=html,json,junit",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:ui": "playwright test --ui",
+    "test:smoke": "playwright test --grep=smoke",
+    "test:visual": "playwright test --grep=visual",
+    "test:performance": "playwright test --grep=performance",
+    "test:cross-device": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
+    "test:ai-generation": "playwright test --grep=ai-generation",
+    "test:langsmith": "node tests/e2e/prompt-eval.js",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install --with-deps",
+    "install:chromium": "playwright install chromium",
+    "install:firefox": "playwright install firefox",
+    "install:webkit": "playwright install webkit",
+    "clean": "rm -rf test-results playwright-report",
+    "setup": "npm run install:browsers && npm run clean"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.40.0",
+    "langchain": "^0.0.200",
+    "openai": "^4.20.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "playwright",
+    "e2e",
+    "testing",
+    "ai",
+    "app-builder",
+    "langsmith",
+    "percy",
+    "browserstack"
+  ],
+  "author": "Dyad Team",
+  "license": "MIT"
+}

@@ -13,7 +13,16 @@ export function useCreateApp() {
       }
 
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.createApp(params);
+      const app = await ipcClient.createApp(params);
+      return {
+        app: {
+          ...app,
+          id: parseInt(app.id) || 0,
+          createdAt: app.createdAt.toString(),
+          updatedAt: app.updatedAt.toString(),
+        },
+        chatId: 0, // Default chat ID
+      };
     },
     onSuccess: () => {
       // Invalidate apps list to trigger refetch

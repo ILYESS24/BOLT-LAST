@@ -1,33 +1,128 @@
-import { useState, useEffect, useCallback } from "react";
-import { useAtom } from "jotai";
-import { appBasePathAtom, appsListAtom } from "@/atoms/appAtoms";
-import { IpcClient } from "@/ipc/ipc_client";
+import { useState, useCallback, useEffect } from 'react';
+import { App } from '../atoms/appAtoms';
 
 export function useLoadApps() {
-  const [apps, setApps] = useAtom(appsListAtom);
-  const [, setAppBasePath] = useAtom(appBasePathAtom);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [apps, setApps] = useState<App[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const refreshApps = useCallback(async () => {
-    setLoading(true);
+  const loadApps = useCallback(async (): Promise<App[]> => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const ipcClient = IpcClient.getInstance();
-      const appListResponse = await ipcClient.listApps();
-      setApps(appListResponse.apps);
-      setAppBasePath(appListResponse.appBasePath);
-      setError(null);
-    } catch (error) {
-      console.error("Error refreshing apps:", error);
-      setError(error instanceof Error ? error : new Error(String(error)));
+      const response = await fetch('/api/apps');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load apps: ${response.statusText}`);
+      }
+
+      const appsData = await response.json();
+      setApps(appsData);
+      return appsData;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      return [];
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [setApps, setError, setLoading]);
+  }, []);
 
+  const createApp = useCallback(async (appData: Partial<App>): Promise<App | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/apps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create app: ${response.statusText}`);
+      }
+
+      const newApp = await response.json();
+      setApps(prev => [...prev, newApp]);
+      return newApp;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateApp = useCallback(async (appId: string, appData: Partial<App>): Promise<App | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/apps/${appId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update app: ${response.statusText}`);
+      }
+
+      const updatedApp = await response.json();
+      setApps(prev => prev.map(app => app.id === appId ? updatedApp : app));
+      return updatedApp;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteApp = useCallback(async (appId: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/apps/${appId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete app: ${response.statusText}`);
+      }
+
+      setApps(prev => prev.filter(app => app.id !== appId));
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Charger les apps au montage du composant
   useEffect(() => {
-    refreshApps();
-  }, [refreshApps]);
+    loadApps();
+  }, [loadApps]);
 
-  return { apps, loading, error, refreshApps };
+  return {
+    apps,
+    loadApps,
+    createApp,
+    updateApp,
+    deleteApp,
+    isLoading,
+    error,
+  };
 }

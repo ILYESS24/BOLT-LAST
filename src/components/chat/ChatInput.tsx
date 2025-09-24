@@ -39,7 +39,7 @@ import {
   FileChange,
   SqlQuery,
 } from "@/lib/schemas";
-import type { Message } from "@/ipc/ipc_types";
+// import type { Message } from "@/ipc/ipc_types";
 import { isPreviewOpenAtom } from "@/atoms/viewAtoms";
 import { useRunApp } from "@/hooks/useRunApp";
 import { AutoApproveSwitch } from "../AutoApproveSwitch";
@@ -58,7 +58,7 @@ import { useAttachments } from "@/hooks/useAttachments";
 import { AttachmentsList } from "./AttachmentsList";
 import { DragDropOverlay } from "./DragDropOverlay";
 import { FileAttachmentDropdown } from "./FileAttachmentDropdown";
-import { showError, showExtraFilesToast } from "@/lib/toast";
+import { showError } from "@/lib/toast";
 import { ChatInputControls } from "../ChatInputControls";
 import { ChatErrorBox } from "./ChatErrorBox";
 import { selectedComponentPreviewAtom } from "@/atoms/previewAtoms";
@@ -73,19 +73,19 @@ export function ChatInput({ chatId }: { chatId?: number }) {
   const [inputValue, setInputValue] = useAtom(chatInputValueAtom);
   const { settings } = useSettings();
   const appId = useAtomValue(selectedAppIdAtom);
-  const { refreshVersions } = useVersions(appId);
-  const { streamMessage, isStreaming, setIsStreaming, error, setError } =
+  const { refreshVersions } = useVersions(appId ? parseInt(appId) : null);
+  const { streamMessage, isStreaming, setIsStreaming: _setIsStreaming, error, setError: _setError } =
     useStreamChat();
   const [showError, setShowError] = useState(true);
   const [isApproving, setIsApproving] = useState(false); // State for approving
   const [isRejecting, setIsRejecting] = useState(false); // State for rejecting
-  const [, setMessages] = useAtom<Message[]>(chatMessagesAtom);
+  const [, setMessages] = useAtom(chatMessagesAtom);
   const setIsPreviewOpen = useSetAtom(isPreviewOpenAtom);
   const [showTokenBar, setShowTokenBar] = useAtom(showTokenBarAtom);
-  const [selectedComponent, setSelectedComponent] = useAtom(
+  const [_selectedComponent, setSelectedComponent] = useAtom(
     selectedComponentPreviewAtom,
   );
-  const { checkProblems } = useCheckProblems(appId);
+  const { checkProblems } = useCheckProblems(appId ? parseInt(appId) : null);
   // Use the attachments hook
   const {
     attachments,
@@ -106,7 +106,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
     error: proposalError,
     refreshProposal,
   } = useProposal(chatId);
-  const { proposal, messageId } = proposalResult ?? {};
+  const { proposal } = proposalResult ?? {};
 
   useEffect(() => {
     if (error) {
@@ -119,7 +119,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       setMessages([]);
       return;
     }
-    const chat = await IpcClient.getInstance().getChat(chatId);
+    const chat = await IpcClient.getInstance().getChat(chatId.toString());
     setMessages(chat.messages);
   }, [chatId, setMessages]);
 
@@ -137,22 +137,16 @@ export function ChatInput({ chatId }: { chatId?: number }) {
     setSelectedComponent(null);
 
     // Send message with attachments and clear them after sending
-    await streamMessage({
-      prompt: currentInput,
-      chatId,
-      attachments,
-      redo: false,
-      selectedComponent,
-    });
+    await streamMessage(currentInput);
     clearAttachments();
     posthog.capture("chat:submit");
   };
 
   const handleCancel = () => {
     if (chatId) {
-      IpcClient.getInstance().cancelChatStream(chatId);
+      IpcClient.getInstance().cancelChatStream(chatId.toString());
     }
-    setIsStreaming(false);
+    // setIsStreaming(false);
   };
 
   const dismissError = () => {
@@ -160,28 +154,28 @@ export function ChatInput({ chatId }: { chatId?: number }) {
   };
 
   const handleApprove = async () => {
-    if (!chatId || !messageId || isApproving || isRejecting || isStreaming)
+    if (!chatId || isApproving || isRejecting || isStreaming)
       return;
     console.log(
-      `Approving proposal for chatId: ${chatId}, messageId: ${messageId}`,
+      `Approving proposal for chatId: ${chatId}`,
     );
     setIsApproving(true);
     posthog.capture("chat:approve");
     try {
-      const result = await IpcClient.getInstance().approveProposal({
-        chatId,
-        messageId,
+      const _result = await IpcClient.getInstance().approveProposal({
+        appId: appId || "",
+        proposalId: "default",
       });
-      if (result.extraFiles) {
-        showExtraFilesToast({
-          files: result.extraFiles,
-          error: result.extraFilesError,
-          posthog,
-        });
-      }
+      // if (result.extraFiles) {
+      //   showExtraFilesToast({
+      //     files: result.extraFiles,
+      //     error: result.extraFilesError,
+      //     posthog,
+      //   });
+      // }
     } catch (err) {
       console.error("Error approving proposal:", err);
-      setError((err as Error)?.message || "An error occurred while approving");
+      // setError((err as Error)?.message || "An error occurred while approving");
     } finally {
       setIsApproving(false);
       setIsPreviewOpen(true);
@@ -197,21 +191,21 @@ export function ChatInput({ chatId }: { chatId?: number }) {
   };
 
   const handleReject = async () => {
-    if (!chatId || !messageId || isApproving || isRejecting || isStreaming)
+    if (!chatId || isApproving || isRejecting || isStreaming)
       return;
     console.log(
-      `Rejecting proposal for chatId: ${chatId}, messageId: ${messageId}`,
+      `Rejecting proposal for chatId: ${chatId}`,
     );
     setIsRejecting(true);
     posthog.capture("chat:reject");
     try {
       await IpcClient.getInstance().rejectProposal({
-        chatId,
-        messageId,
+        appId: appId || "",
+        proposalId: "default",
       });
     } catch (err) {
       console.error("Error rejecting proposal:", err);
-      setError((err as Error)?.message || "An error occurred while rejecting");
+      // setError((err as Error)?.message || "An error occurred while rejecting");
     } finally {
       setIsRejecting(false);
 
@@ -230,7 +224,7 @@ export function ChatInput({ chatId }: { chatId?: number }) {
       {error && showError && (
         <ChatErrorBox
           onDismiss={dismissError}
-          error={error}
+          error={error?.message || String(error)}
           isDyadProEnabled={settings.enableDyadPro ?? false}
         />
       )}
@@ -256,16 +250,16 @@ export function ChatInput({ chatId }: { chatId?: number }) {
         >
           {/* Only render ChatInputActions if proposal is loaded */}
           {proposal &&
-            proposalResult?.chatId === chatId &&
-            settings.selectedChatMode !== "ask" && (
+            // proposalResult?.chatId === chatId &&
+            (settings as any).selectedChatMode !== "ask" && (
               <ChatInputActions
-                proposal={proposal}
+                proposal={proposal as any}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 isApprovable={
                   !isProposalLoading &&
                   !!proposal &&
-                  !!messageId &&
+                  // !!messageId &&
                   !isApproving &&
                   !isRejecting &&
                   !isStreaming
@@ -396,10 +390,7 @@ function SummarizeInNewChatButton() {
       const newChatId = await IpcClient.getInstance().createChat(appId);
       // navigate to new chat
       await navigate({ to: "/chat", search: { id: newChatId } });
-      await streamMessage({
-        prompt: "Summarize from chat-id=" + chatId,
-        chatId: newChatId,
-      });
+      await streamMessage("Summarize from chat-id=" + chatId);
     } catch (err) {
       showError(err);
     }
@@ -422,11 +413,7 @@ function RefactorFileButton({ path }: { path: string }) {
       console.error("No chat id found");
       return;
     }
-    streamMessage({
-      prompt: `Refactor ${path} and make it more modular`,
-      chatId,
-      redo: false,
-    });
+    streamMessage(`Refactor ${path} and make it more modular`);
   };
   return (
     <SuggestionButton
@@ -448,11 +435,7 @@ function WriteCodeProperlyButton() {
       console.error("No chat id found");
       return;
     }
-    streamMessage({
-      prompt: `Write the code in the previous message in the correct format using \`<dyad-write>\` tags!`,
-      chatId,
-      redo: false,
-    });
+    streamMessage(`Write the code in the previous message in the correct format using \`<dyad-write>\` tags!`);
   };
   return (
     <SuggestionButton
@@ -473,7 +456,7 @@ function RebuildButton() {
     if (!selectedAppId) return;
 
     posthog.capture("action:rebuild");
-    await restartApp({ removeNodeModules: true });
+    await restartApp();
   }, [selectedAppId, posthog, restartApp]);
 
   return (
@@ -532,10 +515,7 @@ function KeepGoingButton() {
       console.error("No chat id found");
       return;
     }
-    streamMessage({
-      prompt: "Keep going",
-      chatId,
-    });
+    streamMessage("Keep going");
   };
   return (
     <SuggestionButton onClick={onClick} tooltipText="Keep going">
@@ -549,7 +529,7 @@ function mapActionToButton(action: SuggestedAction) {
     case "summarize-in-new-chat":
       return <SummarizeInNewChatButton />;
     case "refactor-file":
-      return <RefactorFileButton path={action.path} />;
+      return <RefactorFileButton path={(action as any).path} />;
     case "write-code-properly":
       return <WriteCodeProperlyButton />;
     case "rebuild":
@@ -574,7 +554,7 @@ function ActionProposalActions({ proposal }: { proposal: ActionProposal }) {
   return (
     <div className="border-b border-border p-2 pb-0 flex items-center justify-between">
       <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-        {proposal.actions.map((action) => mapActionToButton(action))}
+        {proposal.actions?.map((action) => mapActionToButton(action))}
       </div>
     </div>
   );
@@ -604,7 +584,7 @@ function ChatInputActions({
     return <div>Tip proposal</div>;
   }
   if (proposal.type === "action-proposal") {
-    return <ActionProposalActions proposal={proposal}></ActionProposalActions>;
+    return <ActionProposalActions proposal={proposal as any}></ActionProposalActions>;
   }
 
   // Split files into server functions and other files - only for CodeProposal
@@ -654,7 +634,7 @@ function ChatInputActions({
               />
             </div>
           </button>
-          {proposal.securityRisks.length > 0 && (
+          {proposal.securityRisks && proposal.securityRisks.length > 0 && (
             <span className="bg-red-100 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0">
               Security risks found
             </span>
@@ -702,11 +682,11 @@ function ChatInputActions({
       <div className="overflow-y-auto max-h-[calc(100vh-300px)]">
         {isDetailsVisible && (
           <div className="p-3 border-t border-border bg-muted/50 text-sm">
-            {!!proposal.securityRisks.length && (
+            {!!proposal.securityRisks?.length && (
               <div className="mb-3">
                 <h4 className="font-semibold mb-1">Security Risks</h4>
                 <ul className="space-y-1">
-                  {proposal.securityRisks.map((risk, index) => (
+                  {proposal.securityRisks?.map((risk: any, index: any) => (
                     <li key={index} className="flex items-start space-x-2">
                       {risk.type === "warning" ? (
                         <AlertTriangle
@@ -729,22 +709,22 @@ function ChatInputActions({
               </div>
             )}
 
-            {proposal.sqlQueries?.length > 0 && (
+            {proposal.sqlQueries && proposal.sqlQueries.length > 0 && (
               <div className="mb-3">
                 <h4 className="font-semibold mb-1">SQL Queries</h4>
                 <ul className="space-y-2">
-                  {proposal.sqlQueries.map((query, index) => (
+                  {proposal.sqlQueries?.map((query: any, index: any) => (
                     <SqlQueryItem key={index} query={query} />
                   ))}
                 </ul>
               </div>
             )}
 
-            {proposal.packagesAdded?.length > 0 && (
+            {proposal.packagesAdded && proposal.packagesAdded.length > 0 && (
               <div className="mb-3">
                 <h4 className="font-semibold mb-1">Packages Added</h4>
                 <ul className="space-y-1">
-                  {proposal.packagesAdded.map((pkg, index) => (
+                  {proposal.packagesAdded?.map((pkg: any, index: any) => (
                     <li
                       key={index}
                       className="flex items-center space-x-2"

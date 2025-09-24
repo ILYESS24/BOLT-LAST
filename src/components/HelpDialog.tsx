@@ -135,7 +135,7 @@ ${debugInfo.logs.slice(-3_500) || "No logs available"}
     try {
       // Get chat logs (includes debug info, chat data, and codebase)
       const chatLogs =
-        await IpcClient.getInstance().getChatLogs(selectedChatId);
+        await IpcClient.getInstance().getChatLogs({ chatId: selectedChatId });
 
       // Store data for review and switch to review mode
       setChatLogsData(chatLogs);
@@ -156,7 +156,7 @@ ${debugInfo.logs.slice(-3_500) || "No logs available"}
     setIsUploading(true);
     try {
       // Prepare data for upload
-      const chatLogsJson = {
+      const _chatLogsJson = {
         systemInfo: chatLogsData.debugInfo,
         chat: chatLogsData.chat,
         codebaseSnippet: chatLogsData.codebase,
@@ -186,8 +186,6 @@ ${debugInfo.logs.slice(-3_500) || "No logs available"}
 
       await IpcClient.getInstance().uploadToSignedUrl(
         uploadUrl,
-        "application/json",
-        chatLogsJson,
       );
 
       // Extract session ID (filename without extension)

@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState , forwardRef } from "react";
 import {
   $getRoot,
   $createParagraphNode,
   $createTextNode,
   EditorState,
-} from "lexical";
+ KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIGH } from "lexical";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -19,10 +19,10 @@ import {
   type BeautifulMentionsTheme,
   type BeautifulMentionsMenuItemProps,
 } from "lexical-beautiful-mentions";
-import { KEY_ENTER_COMMAND, COMMAND_PRIORITY_HIGH } from "lexical";
+
 import { useLoadApps } from "@/hooks/useLoadApps";
 import { usePrompts } from "@/hooks/usePrompts";
-import { forwardRef } from "react";
+
 import { useAtomValue } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { MENTION_REGEX, parseAppMentions } from "@/shared/parse_mention_apps";

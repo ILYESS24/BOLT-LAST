@@ -8,17 +8,15 @@ import {
   ContextPathResults,
 } from "@/lib/schemas";
 import { estimateTokens } from "../utils/token_utils";
-import { createLoggedHandler } from "./safe_handle";
-import log from "electron-log";
+// import log from "electron-log";
 import { getDyadAppPath } from "@/paths/paths";
 import { extractCodebase } from "@/utils/codebase";
 import { validateChatContext } from "../utils/context_paths_utils";
+import { ipcMain } from "electron";
 
-const logger = log.scope("context_paths_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerContextPathsHandlers() {
-  handle(
+  ipcMain.handle(
     "get-context-paths",
     async (_, { appId }: { appId: number }): Promise<ContextPathResults> => {
       z.object({ appId: z.number() }).parse({ appId });
@@ -37,67 +35,79 @@ export function registerContextPathsHandlers() {
       const appPath = getDyadAppPath(app.path);
 
       const results: ContextPathResults = {
+        paths: [],
         contextPaths: [],
         smartContextAutoIncludes: [],
         excludePaths: [],
+        totalFiles: 0,
+        lastScanned: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
       };
-      const { contextPaths, smartContextAutoIncludes, excludePaths } =
+        const { contextPaths, smartContextAutoIncludes, excludePaths } =
         validateChatContext(app.chatContext);
       for (const contextPath of contextPaths) {
-        const { formattedOutput, files } = await extractCodebase({
+        const { formattedOutput, files: _files } = await extractCodebase({
           appPath,
           chatContext: {
+            appId: app.id.toString(),
+            chatId: "0", // Chat par défaut
             contextPaths: [contextPath],
             smartContextAutoIncludes: [],
+            excludePaths: [],
+            lastUpdated: new Date().toISOString(),
           },
         });
-        const totalTokens = estimateTokens(formattedOutput);
+        const _totalTokens = estimateTokens(formattedOutput);
 
         results.contextPaths.push({
           ...contextPath,
-          files: files.length,
-          tokens: totalTokens,
+          files: _files.length,
+          tokens: _totalTokens,
         });
       }
 
       for (const contextPath of smartContextAutoIncludes) {
-        const { formattedOutput, files } = await extractCodebase({
+        const { formattedOutput, files: _files } = await extractCodebase({
           appPath,
           chatContext: {
+            appId: app.id.toString(),
+            chatId: "0", // Chat par défaut
             contextPaths: [contextPath],
             smartContextAutoIncludes: [],
+            excludePaths: [],
+            lastUpdated: new Date().toISOString(),
           },
         });
-        const totalTokens = estimateTokens(formattedOutput);
+        const _totalTokens = estimateTokens(formattedOutput);
 
         results.smartContextAutoIncludes.push({
           ...contextPath,
-          files: files.length,
-          tokens: totalTokens,
+          files: _files.length,
+          tokens: _totalTokens,
         });
       }
 
       for (const excludePath of excludePaths || []) {
-        const { formattedOutput, files } = await extractCodebase({
+        const { formattedOutput, files: _files } = await extractCodebase({
           appPath,
           chatContext: {
-            contextPaths: [excludePath],
+            appId: app.id.toString(),
+            chatId: "0", // Chat par défaut
+            contextPaths: [{ globPath: excludePath }],
             smartContextAutoIncludes: [],
+            excludePaths: [],
+            lastUpdated: new Date().toISOString(),
           },
         });
-        const totalTokens = estimateTokens(formattedOutput);
+        const _totalTokens = estimateTokens(formattedOutput);
 
-        results.excludePaths.push({
-          ...excludePath,
-          files: files.length,
-          tokens: totalTokens,
-        });
+        results.excludePaths.push(excludePath);
       }
       return results;
     },
   );
 
-  handle(
+  ipcMain.handle(
     "set-context-paths",
     async (
       _,

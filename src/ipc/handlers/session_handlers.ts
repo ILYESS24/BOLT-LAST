@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { getTypeScriptCachePath } from "@/paths/paths";
 
 export const registerSessionHandlers = () => {
-  ipcMain.handle("clear-session-data", async (_event) => {
+  ipcMain.handle("clear-session-data", async () => {
     const defaultAppSession = session.defaultSession;
 
     await defaultAppSession.clearStorageData({

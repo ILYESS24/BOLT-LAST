@@ -16,12 +16,10 @@ export function DeepLinkProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const ipcClient = IpcClient.getInstance();
-    const unsubscribe = ipcClient.onDeepLinkReceived((data) => {
+    ipcClient.onDeepLinkReceived((data: any) => {
       // Update with timestamp to ensure state change even if same type comes twice
       setLastDeepLink({ ...data, timestamp: Date.now() });
     });
-
-    return unsubscribe;
   }, []);
 
   return (

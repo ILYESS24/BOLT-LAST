@@ -93,7 +93,7 @@ export class BackupManager {
   /**
    * Create a backup of settings and database
    */
-  async createBackup(reason: string = "manual"): Promise<string> {
+  async createBackup(reason = "manual"): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const version = app.getVersion();
     const backupName = `v${version}_${timestamp}_${reason}`;

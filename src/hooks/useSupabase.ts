@@ -42,7 +42,7 @@ export function useSupabase() {
     async (projectId: string, appId: number) => {
       setLoading(true);
       try {
-        await ipcClient.setSupabaseAppProject(projectId, appId);
+        await ipcClient.setSupabaseAppProject(projectId, appId.toString());
         setError(null);
       } catch (error) {
         console.error("Error setting Supabase project for app:", error);
@@ -62,7 +62,7 @@ export function useSupabase() {
     async (appId: number) => {
       setLoading(true);
       try {
-        await ipcClient.unsetSupabaseAppProject(appId);
+        await ipcClient.unsetSupabaseAppProject(appId.toString());
         setError(null);
       } catch (error) {
         console.error("Error unsetting Supabase project for app:", error);

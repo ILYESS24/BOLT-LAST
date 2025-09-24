@@ -38,7 +38,7 @@ export function ProviderSettingsPage({ provider }: ProviderSettingsPageProps) {
   } = useLanguageModelProviders();
 
   // Find the specific provider data from the fetched list
-  const providerData = allProviders?.find((p) => p.id === provider);
+  const providerData = allProviders?.find((p: any) => p.id === provider);
   const supportsCustomModels =
     providerData?.type === "custom" || providerData?.type === "cloud";
 
@@ -101,7 +101,7 @@ export function ProviderSettingsPage({ provider }: ProviderSettingsPageProps) {
       if (isDyad) {
         settingsUpdate.enableDyadPro = true;
       }
-      await updateSettings(settingsUpdate);
+      await updateSettings(settingsUpdate as any);
       setApiKeyInput(""); // Clear input on success
       // Optionally show a success message
     } catch (error: any) {
@@ -251,14 +251,14 @@ export function ProviderSettingsPage({ provider }: ProviderSettingsPageProps) {
           <Alert variant="destructive">
             <AlertTitle>Error Loading Settings</AlertTitle>
             <AlertDescription>
-              Could not load configuration data: {settingsError.message}
+              Could not load configuration data: {String(settingsError)}
             </AlertDescription>
           </Alert>
         ) : (
           <ApiKeyConfiguration
             provider={provider}
             providerDisplayName={providerDisplayName}
-            settings={settings}
+            settings={settings as any}
             envVars={envVars}
             envVarName={envVarName}
             isSaving={isSaving}

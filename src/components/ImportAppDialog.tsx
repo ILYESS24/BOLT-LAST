@@ -48,8 +48,8 @@ export function ImportAppDialog({ isOpen, onClose }: ImportAppDialogProps) {
   const [installCommand, setInstallCommand] = useState("pnpm install");
   const [startCommand, setStartCommand] = useState("pnpm dev");
   const navigate = useNavigate();
-  const { streamMessage } = useStreamChat({ hasChatId: false });
-  const { refreshApps } = useLoadApps();
+  const { sendMessage } = useStreamChat();
+  const { loadApps } = useLoadApps();
   const setSelectedAppId = useSetAtom(selectedAppIdAtom);
 
   const checkAppName = async (name: string): Promise<void> => {
@@ -109,16 +109,14 @@ export function ImportAppDialog({ isOpen, onClose }: ImportAppDialogProps) {
       );
       onClose();
 
-      navigate({ to: "/chat", search: { id: result.chatId } });
+      navigate({ to: "/chat", search: { id: result.chatId.toString() } });
       if (!hasAiRules) {
-        streamMessage({
-          prompt:
-            "Generate an AI_RULES.md file for this app. Describe the tech stack in 5-10 bullet points and describe clear rules about what libraries to use for what.",
-          chatId: result.chatId,
-        });
+        sendMessage(
+          "Generate an AI_RULES.md file for this app. Describe the tech stack in 5-10 bullet points and describe clear rules about what libraries to use for what."
+        );
       }
-      setSelectedAppId(result.appId);
-      await refreshApps();
+      setSelectedAppId(result.app.id.toString());
+      await loadApps();
     },
     onError: (error: Error) => {
       showError(error.message);

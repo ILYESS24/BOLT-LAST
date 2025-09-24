@@ -104,7 +104,7 @@ async function getSystemDebugInfo({
     nodePath,
     telemetryId,
     selectedLanguageModel:
-      serializeModelForDebug(settings.selectedModel) || "unknown",
+      serializeModelForDebug(settings.selectedModel || { id: "default", name: "default", provider: "default" }) || "unknown",
     telemetryConsent: settings.telemetryConsent || "unknown",
     telemetryUrl: "https://us.i.posthog.com", // Hardcoded from renderer.tsx
     dyadVersion,
@@ -199,5 +199,5 @@ export function registerDebugHandlers() {
 }
 
 function serializeModelForDebug(model: LargeLanguageModel): string {
-  return `${model.provider}:${model.name} | customId: ${model.customModelId}`;
+  return `${model.provider}:${model.name} | customId: ${(model as any).customModelId || "none"}`;
 }

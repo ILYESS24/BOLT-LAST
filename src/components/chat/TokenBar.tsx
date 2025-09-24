@@ -31,7 +31,7 @@ export function TokenBar({ chatId }: TokenBarProps) {
     if (!chatId) return;
     // Mark this as used, we need to re-trigger token count
     // when selected model changes.
-    void settings?.selectedModel;
+    void (settings as any)?.selectedModel;
 
     const debounceTimer = setTimeout(() => {
       countTokens(chatId, inputValue).catch((err) => {
@@ -41,7 +41,7 @@ export function TokenBar({ chatId }: TokenBarProps) {
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [chatId, inputValue, countTokens, settings?.selectedModel]);
+  }, [chatId, inputValue, countTokens, (settings as any)?.selectedModel]);
 
   if (!chatId || !result) {
     return null;
@@ -143,7 +143,7 @@ export function TokenBar({ chatId }: TokenBarProps) {
         </Tooltip>
       </TooltipProvider>
       {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
-      {(!settings?.enableProSmartFilesContextMode ||
+      {(!(settings as any)?.enableProSmartFilesContextMode ||
         !settings?.enableDyadPro) && (
         <div className="text-xs text-center text-muted-foreground mt-2">
           Optimize your tokens with{" "}

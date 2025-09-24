@@ -92,7 +92,7 @@ export async function getSupabaseClient(): Promise<SupabaseManagementAPI> {
   const settings = readSettings();
 
   // Check if Supabase token exists in settings
-  const supabaseAccessToken = settings.supabase?.accessToken?.value;
+  const supabaseAccessToken = typeof settings.supabase?.accessToken === 'string' ? settings.supabase.accessToken : settings.supabase?.accessToken?.value;
   const expiresIn = settings.supabase?.expiresIn;
 
   if (!supabaseAccessToken) {
@@ -106,7 +106,7 @@ export async function getSupabaseClient(): Promise<SupabaseManagementAPI> {
     await withLock("refresh-supabase-token", refreshSupabaseToken);
     // Get updated settings after refresh
     const updatedSettings = readSettings();
-    const newAccessToken = updatedSettings.supabase?.accessToken?.value;
+    const newAccessToken = typeof updatedSettings.supabase?.accessToken === 'string' ? updatedSettings.supabase.accessToken : updatedSettings.supabase?.accessToken?.value;
 
     if (!newAccessToken) {
       throw new Error("Failed to refresh Supabase access token");

@@ -5,7 +5,7 @@ import ChatMessage from "./ChatMessage";
 import { SetupBanner } from "../SetupBanner";
 
 import { useStreamChat } from "@/hooks/useStreamChat";
-import { selectedChatIdAtom } from "@/atoms/chatAtoms";
+import { selectedChatIdAtom , chatMessagesAtom } from "@/atoms/chatAtoms";
 import { useAtomValue, useSetAtom } from "jotai";
 import { Loader2, RefreshCw, Undo } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { useVersions } from "@/hooks/useVersions";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { showError, showWarning } from "@/lib/toast";
 import { IpcClient } from "@/ipc/ipc_client";
-import { chatMessagesAtom } from "@/atoms/chatAtoms";
+
 import { useLanguageModelProviders } from "@/hooks/useLanguageModelProviders";
 import { useSettings } from "@/hooks/useSettings";
 import { useUserBudgetInfo } from "@/hooks/useUserBudgetInfo";
@@ -103,9 +103,10 @@ export const MessagesList = forwardRef<HTMLDivElement, MessagesListProps>(
                             versionId: chat.initialCommitHash,
                           });
                           try {
-                            await IpcClient.getInstance().deleteMessages(
-                              selectedChatId,
-                            );
+                    await IpcClient.getInstance().deleteMessages({
+                      chatId: selectedChatId,
+                      messageIds: [],
+                    });
                             setMessages([]);
                           } catch (err) {
                             showError(err);
@@ -197,11 +198,7 @@ export const MessagesList = forwardRef<HTMLDivElement, MessagesListProps>(
                     const redo = shouldRedo;
                     console.debug("Streaming message with redo", redo);
 
-                    streamMessage({
-                      prompt: lastUserMessage.content,
-                      chatId: selectedChatId,
-                      redo,
-                    });
+                    streamMessage(lastUserMessage.content);
                   } catch (error) {
                     console.error("Error during retry operation:", error);
                     showError("Failed to retry message");
@@ -226,7 +223,7 @@ export const MessagesList = forwardRef<HTMLDivElement, MessagesListProps>(
           !userBudget &&
           messages.length > 0 && (
             <PromoMessage
-              seed={messages.length * (appId ?? 1) * (selectedChatId ?? 1)}
+              seed={messages.length * (parseInt(appId || "0") ?? 1) * (parseInt(selectedChatId || "0") ?? 1)}
             />
           )}
         <div ref={messagesEndRef} />

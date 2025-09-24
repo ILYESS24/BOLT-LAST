@@ -5,17 +5,15 @@ import { desc, eq } from "drizzle-orm";
 import type { ChatSummary } from "../../lib/schemas";
 import * as git from "isomorphic-git";
 import * as fs from "fs";
-import { createLoggedHandler } from "./safe_handle";
 
 import log from "electron-log";
 import { getDyadAppPath } from "../../paths/paths";
 import { UpdateChatParams } from "../ipc_types";
 
 const logger = log.scope("chat_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerChatHandlers() {
-  handle("create-chat", async (_, appId: number): Promise<number> => {
+  ipcMain.handle("create-chat", async (_, appId: number): Promise<number> => {
     // Get the app's path first
     const app = await db.query.apps.findFirst({
       where: eq(apps.id, appId),
@@ -77,7 +75,7 @@ export function registerChatHandlers() {
     return chat;
   });
 
-  handle("get-chats", async (_, appId?: number): Promise<ChatSummary[]> => {
+  ipcMain.handle("get-chats", async (_, appId?: number): Promise<ChatSummary[]> => {
     // If appId is provided, filter chats for that app
     const query = appId
       ? db.query.chats.findMany({
@@ -101,18 +99,25 @@ export function registerChatHandlers() {
         });
 
     const allChats = await query;
-    return allChats;
+    return allChats.map(chat => ({
+      id: chat.id.toString(),
+      name: chat.title || `Chat ${chat.id}`,
+      appId: chat.appId,
+      title: chat.title || undefined,
+      createdAt: chat.createdAt.toISOString(),
+      updatedAt: chat.createdAt.toISOString(), // Utiliser createdAt comme updatedAt par défaut
+    }));
   });
 
-  handle("delete-chat", async (_, chatId: number): Promise<void> => {
+  ipcMain.handle("delete-chat", async (_, chatId: number): Promise<void> => {
     await db.delete(chats).where(eq(chats.id, chatId));
   });
 
-  handle("update-chat", async (_, { chatId, title }: UpdateChatParams) => {
+  ipcMain.handle("update-chat", async (_, { chatId, title }: UpdateChatParams) => {
     await db.update(chats).set({ title }).where(eq(chats.id, chatId));
   });
 
-  handle("delete-messages", async (_, chatId: number): Promise<void> => {
+  ipcMain.handle("delete-messages", async (_, chatId: number): Promise<void> => {
     await db.delete(messages).where(eq(messages.chatId, chatId));
   });
 }

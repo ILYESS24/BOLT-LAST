@@ -473,7 +473,7 @@ export async function extractCodebase({
     for (const p of contextPaths) {
       const pattern = createFullGlobPath({
         appPath,
-        globPath: p.globPath,
+        globPath: typeof p === 'string' ? p : (p as any).globPath,
       });
       const matches = await glob(pattern, {
         nodir: true,
@@ -496,7 +496,7 @@ export async function extractCodebase({
     for (const p of smartContextAutoIncludes) {
       const pattern = createFullGlobPath({
         appPath,
-        globPath: p.globPath,
+        globPath: typeof p === 'string' ? p : (p as any).globPath,
       });
       const matches = await glob(pattern, {
         nodir: true,
@@ -516,7 +516,7 @@ export async function extractCodebase({
     for (const p of excludePaths) {
       const pattern = createFullGlobPath({
         appPath,
-        globPath: p.globPath,
+        globPath: typeof p === 'string' ? p : (p as any).globPath,
       });
       const matches = await glob(pattern, {
         nodir: true,

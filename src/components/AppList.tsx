@@ -18,14 +18,14 @@ export function AppList({ show }: { show?: boolean }) {
   const navigate = useNavigate();
   const [selectedAppId, setSelectedAppId] = useAtom(selectedAppIdAtom);
   const setSelectedChatId = useSetAtom(selectedChatIdAtom);
-  const { apps, loading, error } = useLoadApps();
+  const { apps, isLoading: loading, error } = useLoadApps();
 
   if (!show) {
     return null;
   }
 
   const handleAppClick = (id: number) => {
-    setSelectedAppId(id);
+    setSelectedAppId(id.toString());
     setSelectedChatId(null);
     navigate({
       to: "/",
@@ -68,7 +68,7 @@ export function AppList({ show }: { show?: boolean }) {
                 <SidebarMenuItem key={app.id} className="mb-1">
                   <Button
                     variant="ghost"
-                    onClick={() => handleAppClick(app.id)}
+                    onClick={() => handleAppClick(parseInt(app.id))}
                     className={`justify-start w-full text-left py-3 hover:bg-sidebar-accent/80 ${
                       selectedAppId === app.id
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"

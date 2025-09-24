@@ -2,7 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { IpcClient } from "@/ipc/ipc_client";
-import { GlobPath, ContextPathResults } from "@/lib/schemas";
+import { ContextPathResults } from "@/lib/schemas";
+
+type GlobPath = {
+  globPath: string;
+  excludePaths?: string[];
+  files?: number;
+};
 
 export function useContextPaths() {
   const queryClient = useQueryClient();
@@ -64,12 +70,12 @@ export function useContextPaths() {
     return updateContextPathsMutation.mutateAsync({
       contextPaths: paths,
       smartContextAutoIncludes: currentAutoIncludes.map(
-        ({ globPath }: { globPath: string }) => ({
+        (globPath: string) => ({
           globPath,
         }),
       ),
       excludePaths: currentExcludePaths.map(
-        ({ globPath }: { globPath: string }) => ({
+        (globPath: string) => ({
           globPath,
         }),
       ),
@@ -85,7 +91,7 @@ export function useContextPaths() {
       ),
       smartContextAutoIncludes: paths,
       excludePaths: currentExcludePaths.map(
-        ({ globPath }: { globPath: string }) => ({
+        (globPath: string) => ({
           globPath,
         }),
       ),
@@ -101,7 +107,7 @@ export function useContextPaths() {
         ({ globPath }: { globPath: string }) => ({ globPath }),
       ),
       smartContextAutoIncludes: currentAutoIncludes.map(
-        ({ globPath }: { globPath: string }) => ({
+        (globPath: string) => ({
           globPath,
         }),
       ),

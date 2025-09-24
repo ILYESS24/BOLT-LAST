@@ -68,7 +68,7 @@ export function registerHelpBotHandlers() {
           messages: updatedHistory as any,
           maxRetries: 1,
           onError: (error) => {
-            let errorMessage = (error as any)?.error?.message;
+            const errorMessage = (error as any)?.error?.message;
             logger.error("help bot stream error", errorMessage);
             safeSend(event.sender, "help:chat:response:error", {
               sessionId,

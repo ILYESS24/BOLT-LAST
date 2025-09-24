@@ -1,294 +1,426 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export const SecretSchema = z.object({
-  value: z.string(),
-  encryptionType: z.enum(["electron-safe-storage", "plaintext"]).optional(),
-});
-export type Secret = z.infer<typeof SecretSchema>;
-
-/**
- * Zod schema for chat summary objects returned by the get-chats IPC
- */
-export const ChatSummarySchema = z.object({
-  id: z.number(),
-  appId: z.number(),
-  title: z.string().nullable(),
-  createdAt: z.date(),
-});
-
-/**
- * Type derived from the ChatSummarySchema
- */
-export type ChatSummary = z.infer<typeof ChatSummarySchema>;
-
-/**
- * Zod schema for an array of chat summaries
- */
-export const ChatSummariesSchema = z.array(ChatSummarySchema);
-
-const providers = [
-  "openai",
-  "anthropic",
-  "google",
-  "auto",
-  "openrouter",
-  "ollama",
-  "lmstudio",
-  "azure",
-] as const;
-
-export const cloudProviders = providers.filter(
-  (provider) => provider !== "ollama" && provider !== "lmstudio",
-);
-
-/**
- * Zod schema for large language model configuration
- */
-export const LargeLanguageModelSchema = z.object({
+// Schémas de base
+export const ModelSchema = z.object({
+  id: z.string(),
   name: z.string(),
   provider: z.string(),
-  customModelId: z.number().optional(),
+  description: z.string().optional(),
+  contextWindow: z.number().optional(),
+  inputCost: z.number().optional(),
+  outputCost: z.number().optional(),
+  maxTokens: z.number().optional(),
+  customModelId: z.string().optional(),
+  apiName: z.string().optional(),
 });
 
-/**
- * Type derived from the LargeLanguageModelSchema
- */
+export const ProviderSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  apiKeyUrl: z.string().optional(),
+  models: z.array(ModelSchema).optional(),
+});
+
+export const FileSchema = z.object({
+  id: z.string(),
+  path: z.string(),
+  content: z.string(),
+  size: z.number(),
+  updatedAt: z.string(),
+});
+
+export const AppSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  userId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  path: z.string().optional(),
+  description: z.string().optional(),
+  files: z.array(FileSchema).optional(),
+  githubOrg: z.string().nullable().optional(),
+  githubRepo: z.string().nullable().optional(),
+  githubBranch: z.string().nullable().optional(),
+  githubToken: z.string().nullable().optional(),
+  githubInstallationId: z.number().nullable().optional(),
+  supabaseProjectId: z.string().nullable().optional(),
+  supabaseApiUrl: z.string().nullable().optional(),
+  supabaseAnonKey: z.string().nullable().optional(),
+  vercelProjectId: z.string().nullable().optional(),
+  vercelToken: z.string().nullable().optional(),
+  vercelTeamId: z.string().nullable().optional(),
+  vercelDeploymentUrl: z.string().nullable().optional(),
+  neonDatabaseId: z.string().nullable().optional(),
+  neonApiKey: z.string().nullable().optional(),
+  neonProjectId: z.string().nullable().optional(),
+  lastRun: z.string().nullable().optional(),
+  status: z.string().optional(),
+  port: z.number().nullable().optional(),
+  pid: z.number().nullable().optional(),
+  installCommand: z.string().optional(),
+  startCommand: z.string().optional(),
+  supabaseProjectName: z.string().optional(),
+  neonDevelopmentBranchId: z.string().optional(),
+  neonPreviewBranchId: z.string().optional(),
+  vercelProjectName: z.string().optional(),
+  vercelTeamSlug: z.string().optional(),
+});
+
+export const UserSettingsSchema = z.object({
+  apiKey: z.string().optional(),
+  model: z.string().optional(),
+  temperature: z.number().optional(),
+  maxTokens: z.number().optional(),
+  topP: z.number().optional(),
+  frequencyPenalty: z.number().optional(),
+  presencePenalty: z.number().optional(),
+  enableDynamicSystemPrompt: z.boolean().optional(),
+  enableProMode: z.boolean().optional(),
+  enableAutoSave: z.boolean().optional(),
+  enableAutoRun: z.boolean().optional(),
+  enableAutoCommit: z.boolean().optional(),
+  enableAutoSync: z.boolean().optional(),
+  enableDebugMode: z.boolean().optional(),
+  enableTelemetry: z.boolean().optional(),
+  enableAnalytics: z.boolean().optional(),
+  enableLogging: z.boolean().optional(),
+  enableNotifications: z.boolean().optional(),
+  enableSounds: z.boolean().optional(),
+  theme: z.string().optional(),
+  language: z.string().optional(),
+  timezone: z.string().optional(),
+  providerSettings: z.object({
+    openai: z.object({
+      apiKey: z.object({
+        value: z.string(),
+        encryptionType: z.string().optional(),
+      }).optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      topP: z.number().optional(),
+      frequencyPenalty: z.number().optional(),
+      presencePenalty: z.number().optional(),
+    }).optional(),
+    anthropic: z.object({
+      apiKey: z.object({
+        value: z.string(),
+        encryptionType: z.string().optional(),
+      }).optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      topP: z.number().optional(),
+    }).optional(),
+    custom: z.object({
+      apiKey: z.object({
+        value: z.string(),
+        encryptionType: z.string().optional(),
+      }).optional(),
+      baseUrl: z.string().optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      topP: z.number().optional(),
+    }).optional(),
+    local: z.object({
+      baseUrl: z.string().optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      topP: z.number().optional(),
+    }).optional(),
+    auto: z.object({
+      apiKey: z.object({
+        value: z.string(),
+        encryptionType: z.string().optional(),
+      }).optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      topP: z.number().optional(),
+    }).optional(),
+  }).optional(),
+  supabase: z.object({
+    accessToken: z.union([z.string(), z.object({
+      value: z.string(),
+      encryptionType: z.string().optional(),
+    })]).optional(),
+    refreshToken: z.object({
+      value: z.string(),
+      encryptionType: z.string().optional(),
+    }).optional(),
+    tokenTimestamp: z.number().optional(),
+    expiresIn: z.number().optional(),
+  }).optional(),
+  vercel: z.object({
+    accessToken: z.union([z.string(), z.object({
+      value: z.string(),
+      encryptionType: z.string().optional(),
+    })]).optional(),
+  }).optional(),
+  neon: z.object({
+    accessToken: z.union([z.string(), z.object({
+      value: z.string(),
+      encryptionType: z.string().optional(),
+    })]).optional(),
+    refreshToken: z.object({
+      value: z.string(),
+      encryptionType: z.string().optional(),
+    }).optional(),
+    tokenTimestamp: z.number().optional(),
+    expiresIn: z.number().optional(),
+  }).optional(),
+  stripe: z.object({
+    accessToken: z.string().optional(),
+  }).optional(),
+  dyad: z.object({
+    accessToken: z.string().optional(),
+  }).optional(),
+  dyadProToken: z.string().optional(),
+  releaseChannel: z.string().optional(),
+  selectedTemplateId: z.string().optional(),
+  thinkingBudget: z.enum(["low", "medium", "high"]).optional(),
+  proSmartContextOption: z.enum(["balanced", "conservative"]).optional(),
+  selectedChatMode: z.enum(['build', 'ask']).optional(),
+  enableAutoFixProblems: z.boolean().optional(),
+  enableAutoUpdate: z.boolean().optional(),
+  autoApprove: z.boolean().optional(),
+  githubAccessToken: z.union([z.string(), z.object({
+    value: z.string(),
+    encryptionType: z.string().optional(),
+  })]).optional(),
+  selectedModel: z.object({
+    id: z.string(),
+    name: z.string(),
+    provider: z.string(),
+  }).optional(),
+  enableProSmartFilesContextMode: z.boolean().optional(),
+  maxChatTurnsInContext: z.number().optional(),
+  hasRunBefore: z.boolean().optional(),
+  telemetryConsent: z.string().optional(),
+  telemetryUserId: z.string().optional(),
+  enableDyadPro: z.boolean().optional(),
+  enableProLazyEditsMode: z.boolean().optional(),
+  enableSupabaseWriteSqlMigration: z.boolean().optional(),
+  enableNativeGit: z.boolean().optional(),
+  autoApproveChanges: z.boolean().optional(),
+  experiments: z.record(z.any()).optional(),
+  vercelAccessToken: z.union([z.string(), z.object({
+    value: z.string(),
+    encryptionType: z.string().optional(),
+  })]).optional(),
+});
+
+// Types TypeScript dérivés des schémas
+export type Model = z.infer<typeof ModelSchema>;
+export type Provider = z.infer<typeof ProviderSchema>;
+export type App = z.infer<typeof AppSchema>;
+export type File = z.infer<typeof FileSchema>;
+export type UserSettings = z.infer<typeof UserSettingsSchema>;
+
+// Types pour les propositions et actions
+export const ProposalSchema = z.object({
+  id: z.string(),
+  type: z.enum(["code-proposal", "action-proposal", "tip-proposal"]),
+  title: z.string(),
+  description: z.string(),
+  filePath: z.string(),
+  securityRisks: z.array(z.string()).optional(),
+  filesChanged: z.array(z.object({
+    name: z.string(),
+    path: z.string(),
+    summary: z.string(),
+    type: z.enum(["create", "modify", "delete", "write", "rename"]),
+    isServerFunction: z.boolean().optional(),
+  })).optional(),
+  packagesAdded: z.array(z.string()).optional(),
+  sqlQueries: z.array(z.object({
+    content: z.string(),
+    description: z.string().optional(),
+  })).optional(),
+  actions: z.array(z.any()).optional(),
+});
+
+export const ActionProposalSchema = z.object({
+  id: z.string(),
+  type: z.literal("action-proposal"),
+  actions: z.array(z.any()),
+  title: z.string(),
+  description: z.string(),
+  filePath: z.string(),
+});
+
+export const SuggestedActionSchema = z.object({
+  id: z.string().optional(),
+  type: z.string(),
+  description: z.string(),
+  data: z.any().optional(),
+});
+
+export const FileChangeSchema = z.object({
+  name: z.string(),
+  path: z.string(),
+  summary: z.string(),
+  type: z.enum(["create", "modify", "delete", "code-proposal", "write", "rename"]),
+  isServerFunction: z.boolean().optional(),
+});
+
+export const TokenCountResultSchema = z.object({
+  totalTokens: z.number(),
+  messageHistoryTokens: z.number(),
+  codebaseTokens: z.number(),
+  mentionedAppsTokens: z.number(),
+  inputTokens: z.number(),
+  systemPromptTokens: z.number(),
+  contextWindow: z.number(),
+});
+
+export const RevertVersionResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  successMessage: z.string().optional(),
+  warningMessage: z.string().optional(),
+});
+
+export const HomeSubmitOptionsSchema = z.object({
+  appName: z.string(),
+  description: z.string().optional(),
+  template: z.string().optional(),
+});
+
+export const LargeLanguageModelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  provider: z.string(),
+  contextWindow: z.number().optional(),
+  inputCost: z.number().optional(),
+  outputCost: z.number().optional(),
+});
+
+// Export des types dérivés
+export type Proposal = z.infer<typeof ProposalSchema>;
+export type ActionProposal = z.infer<typeof ActionProposalSchema>;
+export type SuggestedAction = z.infer<typeof SuggestedActionSchema>;
+export type FileChange = z.infer<typeof FileChangeSchema>;
+
+export type ChatMode = 'build' | 'ask';
+export type TokenCountResult = z.infer<typeof TokenCountResultSchema>;
+export type RevertVersionResponse = z.infer<typeof RevertVersionResponseSchema>;
+export type HomeSubmitOptions = z.infer<typeof HomeSubmitOptionsSchema>;
 export type LargeLanguageModel = z.infer<typeof LargeLanguageModelSchema>;
 
-/**
- * Zod schema for provider settings
- */
-export const ProviderSettingSchema = z.object({
-  apiKey: SecretSchema.optional(),
+// Types additionnels
+export type CodeProposal = Proposal;
+export type SqlQuery = {
+  content: string;
+  description?: string;
+};
+
+// Types manquants
+export type ChatSummary = {
+  id: string | number;
+  name: string;
+  title?: string;
+  appId: number;
+  createdAt: Date | string;
+  updatedAt?: Date | string;
+  lastMessage?: string;
+};
+
+export type ProposalResult = {
+  proposal: Proposal;
+  chatId?: number;
+  messageId?: number;
+  success?: boolean;
+};
+
+export type Secret = {
+  value: string;
+  encryptionType?: string;
+};
+
+export const validateModel = (model: any): boolean => {
+  return !!(model?.id && model?.name && model?.provider);
+};
+
+// Schémas additionnels pour les contextes
+export const AppChatContextSchema = z.object({
+  appId: z.string(),
+  chatId: z.string(),
+  contextPaths: z.array(z.object({
+    globPath: z.string(),
+    excludePaths: z.array(z.string()).optional(),
+  })),
+  smartContextAutoIncludes: z.array(z.any()),
+  excludePaths: z.array(z.string()),
+  lastUpdated: z.string(),
 });
 
-/**
- * Type derived from the ProviderSettingSchema
- */
-export type ProviderSetting = z.infer<typeof ProviderSettingSchema>;
-
-export const RuntimeModeSchema = z.enum(["web-sandbox", "local-node", "unset"]);
-export type RuntimeMode = z.infer<typeof RuntimeModeSchema>;
-
-export const RuntimeMode2Schema = z.enum(["host", "docker"]);
-export type RuntimeMode2 = z.infer<typeof RuntimeMode2Schema>;
-
-export const ChatModeSchema = z.enum(["build", "ask"]);
-export type ChatMode = z.infer<typeof ChatModeSchema>;
-
-export const GitHubSecretsSchema = z.object({
-  accessToken: SecretSchema.nullable(),
+export const ContextPathResultsSchema = z.object({
+  contextPaths: z.array(z.object({
+    globPath: z.string(),
+    excludePaths: z.array(z.string()).optional(),
+    files: z.number().optional(),
+    tokens: z.number().optional(),
+  })),
+  smartContextAutoIncludes: z.array(z.any()),
+  excludePaths: z.array(z.string()),
+  lastUpdated: z.string(),
+  tokens: z.number().optional(),
+  paths: z.array(z.string()).optional(),
+  totalFiles: z.number().optional(),
+  lastScanned: z.string().optional(),
 });
-export type GitHubSecrets = z.infer<typeof GitHubSecretsSchema>;
-
-export const GithubUserSchema = z.object({
-  email: z.string(),
-});
-export type GithubUser = z.infer<typeof GithubUserSchema>;
-
-export const SupabaseSchema = z.object({
-  accessToken: SecretSchema.optional(),
-  refreshToken: SecretSchema.optional(),
-  expiresIn: z.number().optional(),
-  tokenTimestamp: z.number().optional(),
-});
-export type Supabase = z.infer<typeof SupabaseSchema>;
-
-export const NeonSchema = z.object({
-  accessToken: SecretSchema.optional(),
-  refreshToken: SecretSchema.optional(),
-  expiresIn: z.number().optional(),
-  tokenTimestamp: z.number().optional(),
-});
-export type Neon = z.infer<typeof NeonSchema>;
-
-export const ExperimentsSchema = z.object({
-  // Deprecated
-  enableSupabaseIntegration: z.boolean().describe("DEPRECATED").optional(),
-  enableFileEditing: z.boolean().describe("DEPRECATED").optional(),
-});
-export type Experiments = z.infer<typeof ExperimentsSchema>;
-
-export const DyadProBudgetSchema = z.object({
-  budgetResetAt: z.string(),
-  maxBudget: z.number(),
-});
-export type DyadProBudget = z.infer<typeof DyadProBudgetSchema>;
 
 export const GlobPathSchema = z.object({
   globPath: z.string(),
+  excludePaths: z.array(z.string()).optional(),
 });
 
-export type GlobPath = z.infer<typeof GlobPathSchema>;
+export const GlobPathStringSchema = z.string();
 
-export const AppChatContextSchema = z.object({
-  contextPaths: z.array(GlobPathSchema),
-  smartContextAutoIncludes: z.array(GlobPathSchema),
-  excludePaths: z.array(GlobPathSchema).optional(),
+export const RenameBranchParamsSchema = z.object({
+  appId: z.string(),
+  oldName: z.string(),
+  newName: z.string(),
 });
+
 export type AppChatContext = z.infer<typeof AppChatContextSchema>;
+export type ContextPathResults = z.infer<typeof ContextPathResultsSchema>;
+export type GlobPath = z.infer<typeof GlobPathSchema>;
+export type GlobPathString = z.infer<typeof GlobPathStringSchema>;
+export type RenameBranchParams = z.infer<typeof RenameBranchParamsSchema>;
 
-export type ContextPathResult = GlobPath & {
-  files: number;
-  tokens: number;
-};
+// Constantes
+export const cloudProviders = ['openai', 'anthropic', 'custom', 'local'] as const;
 
-export type ContextPathResults = {
-  contextPaths: ContextPathResult[];
-  smartContextAutoIncludes: ContextPathResult[];
-  excludePaths: ContextPathResult[];
-};
-
-export const ReleaseChannelSchema = z.enum(["stable", "beta"]);
-export type ReleaseChannel = z.infer<typeof ReleaseChannelSchema>;
-
-/**
- * Zod schema for user settings
- */
-export const UserSettingsSchema = z.object({
-  selectedModel: LargeLanguageModelSchema,
-  providerSettings: z.record(z.string(), ProviderSettingSchema),
-  githubUser: GithubUserSchema.optional(),
-  githubAccessToken: SecretSchema.optional(),
-  vercelAccessToken: SecretSchema.optional(),
-  supabase: SupabaseSchema.optional(),
-  neon: NeonSchema.optional(),
-  autoApproveChanges: z.boolean().optional(),
-  telemetryConsent: z.enum(["opted_in", "opted_out", "unset"]).optional(),
-  telemetryUserId: z.string().optional(),
-  hasRunBefore: z.boolean().optional(),
-  enableDyadPro: z.boolean().optional(),
-  experiments: ExperimentsSchema.optional(),
-  lastShownReleaseNotesVersion: z.string().optional(),
-  maxChatTurnsInContext: z.number().optional(),
-  thinkingBudget: z.enum(["low", "medium", "high"]).optional(),
-  enableProLazyEditsMode: z.boolean().optional(),
-  enableProSmartFilesContextMode: z.boolean().optional(),
-  proSmartContextOption: z.enum(["balanced", "conservative"]).optional(),
-  selectedTemplateId: z.string(),
-  enableSupabaseWriteSqlMigration: z.boolean().optional(),
-  selectedChatMode: ChatModeSchema.optional(),
-  acceptedCommunityCode: z.boolean().optional(),
-
-  enableAutoFixProblems: z.boolean().optional(),
-  enableNativeGit: z.boolean().optional(),
-  enableAutoUpdate: z.boolean(),
-  releaseChannel: ReleaseChannelSchema,
-  runtimeMode2: RuntimeMode2Schema.optional(),
-
-  ////////////////////////////////
-  // E2E TESTING ONLY.
-  ////////////////////////////////
-  isTestMode: z.boolean().optional(),
-
-  ////////////////////////////////
-  // DEPRECATED.
-  ////////////////////////////////
-  enableProSaverMode: z.boolean().optional(),
-  dyadProBudget: DyadProBudgetSchema.optional(),
-  runtimeMode: RuntimeModeSchema.optional(),
-});
-
-/**
- * Type derived from the UserSettingsSchema
- */
-export type UserSettings = z.infer<typeof UserSettingsSchema>;
-
-export function isDyadProEnabled(settings: UserSettings): boolean {
-  return settings.enableDyadPro === true && hasDyadProKey(settings);
-}
-
-export function hasDyadProKey(settings: UserSettings): boolean {
-  return !!settings.providerSettings?.auto?.apiKey?.value;
-}
-
-// Define interfaces for the props
-export interface SecurityRisk {
-  type: "warning" | "danger";
-  title: string;
-  description: string;
-}
-
-export interface FileChange {
-  name: string;
-  path: string;
-  summary: string;
-  type: "write" | "rename" | "delete";
-  isServerFunction: boolean;
-}
-
-export interface CodeProposal {
-  type: "code-proposal";
-  title: string;
-  securityRisks: SecurityRisk[];
-  filesChanged: FileChange[];
-  packagesAdded: string[];
-  sqlQueries: SqlQuery[];
-}
-
-export type SuggestedAction =
-  | RestartAppAction
-  | SummarizeInNewChatAction
-  | RefactorFileAction
-  | WriteCodeProperlyAction
-  | RebuildAction
-  | RestartAction
-  | RefreshAction
-  | KeepGoingAction;
-
-export interface RestartAppAction {
-  id: "restart-app";
-}
-
-export interface SummarizeInNewChatAction {
-  id: "summarize-in-new-chat";
-}
-
-export interface WriteCodeProperlyAction {
-  id: "write-code-properly";
-}
-
-export interface RefactorFileAction {
-  id: "refactor-file";
-  path: string;
-}
-
-export interface RebuildAction {
-  id: "rebuild";
-}
-
-export interface RestartAction {
-  id: "restart";
-}
-
-export interface RefreshAction {
-  id: "refresh";
-}
-
-export interface KeepGoingAction {
-  id: "keep-going";
-}
-
-export interface ActionProposal {
-  type: "action-proposal";
-  actions: SuggestedAction[];
-}
-
-export interface TipProposal {
-  type: "tip-proposal";
-  title: string;
-  description: string;
-}
-
-export type Proposal = CodeProposal | ActionProposal | TipProposal;
-
-export interface ProposalResult {
-  proposal: Proposal;
-  chatId: number;
-  messageId: number;
-}
-
-export interface SqlQuery {
-  content: string;
-  description?: string;
+// Interfaces supplémentaires pour les Settings
+export interface Settings extends UserSettings {
+  autoApprove?: boolean;
+  enableAutoUpdate?: boolean;
+  selectedChatMode?: 'build' | 'ask';
+  githubAccessToken?: string | Secret;
+  selectedModel?: {
+    id: string;
+    name: string;
+    provider: string;
+  };
+  enableProSmartFilesContextMode?: boolean;
+  maxChatTurnsInContext?: number;
+  releaseChannel?: string;
+  runtimeMode2?: string;
+  vercelAccessToken?: string | Secret;
+  envVars?: any[];
+  refreshSettings?: () => void;
+  telemetryConsent?: string;
+  telemetryUserId?: string;
+  enableDyadPro?: boolean;
+  enableProLazyEditsMode?: boolean;
+  enableSupabaseWriteSqlMigration?: boolean;
+  enableNativeGit?: boolean;
+  autoApproveChanges?: boolean;
+  hasRunBefore?: boolean;
+  experiments?: Record<string, any>;
 }

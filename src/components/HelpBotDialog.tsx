@@ -76,7 +76,7 @@ export function HelpBotDialog({ isOpen, onClose }: HelpBotDialogProps) {
     setStreaming(true);
 
     IpcClient.getInstance().startHelpChat(sessionId, trimmed, {
-      onChunk: (delta) => {
+      onChunk: (delta: any) => {
         // Buffer assistant content; UI will flush on interval for smoothness
         assistantBufferRef.current += delta;
       },

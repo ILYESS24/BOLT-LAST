@@ -73,9 +73,9 @@ function ConnectedVercelConnector({
       <a
         onClick={(e) => {
           e.preventDefault();
-          IpcClient.getInstance().openExternalUrl(
-            `https://vercel.com/${app.vercelTeamSlug}/${app.vercelProjectName}`,
-          );
+          // IpcClient.getInstance().openExternalUrl(
+          //   `https://vercel.com/${app.vercelTeamSlug}/${app.vercelProjectName}`,
+          // );
         }}
         className="cursor-pointer text-blue-600 hover:underline dark:text-blue-400"
         target="_blank"
@@ -91,9 +91,9 @@ function ConnectedVercelConnector({
               onClick={(e) => {
                 e.preventDefault();
                 if (app.vercelDeploymentUrl) {
-                  IpcClient.getInstance().openExternalUrl(
-                    app.vercelDeploymentUrl,
-                  );
+                  // IpcClient.getInstance().openExternalUrl(
+                  //   app.vercelDeploymentUrl,
+                  // );
                 }
               }}
               className="cursor-pointer text-blue-600 hover:underline dark:text-blue-400 font-mono"
@@ -178,9 +178,9 @@ function ConnectedVercelConnector({
                   <a
                     onClick={(e) => {
                       e.preventDefault();
-                      IpcClient.getInstance().openExternalUrl(
-                        `https://${deployment.url}`,
-                      );
+                      // IpcClient.getInstance().openExternalUrl(
+                      //   `https://${deployment.url}`,
+                      // );
                     }}
                     className="cursor-pointer text-blue-600 hover:underline dark:text-blue-400 text-sm"
                     target="_blank"
@@ -262,7 +262,7 @@ function UnconnectedVercelConnector({
   const loadAvailableProjects = async () => {
     setIsLoadingProjects(true);
     try {
-      const projects = await IpcClient.getInstance().listVercelProjects();
+      const projects = await IpcClient.getInstance().getVercelProjects();
       setAvailableProjects(projects);
     } catch (error) {
       console.error("Failed to load Vercel projects:", error);
@@ -280,7 +280,7 @@ function UnconnectedVercelConnector({
     setTokenSuccess(false);
 
     try {
-      await IpcClient.getInstance().saveVercelAccessToken({
+      await IpcClient.getInstance().setVercelAccessToken({
         token: accessToken.trim(),
       });
       setTokenSuccess(true);
@@ -299,7 +299,7 @@ function UnconnectedVercelConnector({
     if (!name) return;
     setIsCheckingProject(true);
     try {
-      const result = await IpcClient.getInstance().isVercelProjectAvailable({
+      const result = await IpcClient.getInstance().checkVercelProjectAvailability({
         name,
       });
       setProjectAvailable(result.available);
@@ -339,12 +339,12 @@ function UnconnectedVercelConnector({
       if (projectSetupMode === "create") {
         await IpcClient.getInstance().createVercelProject({
           name: projectName,
-          appId,
+          appId: appId.toString(),
         });
       } else {
-        await IpcClient.getInstance().connectToExistingVercelProject({
+        await IpcClient.getInstance().connectVercelProject({
           projectId: selectedProject,
-          appId,
+          appId: appId.toString(),
         });
       }
       setCreateProjectSuccess(true);
@@ -383,9 +383,9 @@ function UnconnectedVercelConnector({
               <div className="flex gap-2 mt-3">
                 <Button
                   onClick={() => {
-                    IpcClient.getInstance().openExternalUrl(
-                      "https://vercel.com/signup",
-                    );
+                    // IpcClient.getInstance().openExternalUrl(
+                    //   "https://vercel.com/signup",
+                    // );
                   }}
                   variant="outline"
                   className="flex-1"
@@ -394,9 +394,9 @@ function UnconnectedVercelConnector({
                 </Button>
                 <Button
                   onClick={() => {
-                    IpcClient.getInstance().openExternalUrl(
-                      "https://vercel.com/account/settings/tokens",
-                    );
+                    // IpcClient.getInstance().openExternalUrl(
+                    //   "https://vercel.com/account/settings/tokens",
+                    // );
                   }}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
@@ -634,14 +634,35 @@ function UnconnectedVercelConnector({
 }
 
 export function VercelConnector({ appId, folderName }: VercelConnectorProps) {
-  const { app, refreshApp } = useLoadApp(appId);
+  const { app, refreshApp } = useLoadApp();
   const { settings, refreshSettings } = useSettings();
 
   if (app?.vercelProjectId && appId) {
     return (
       <ConnectedVercelConnector
         appId={appId}
-        app={app}
+        app={{
+          ...app,
+          id: parseInt(app.id) || 0,
+          path: app.path || "",
+          files: (app.files || []).map((f: any) => f.path),
+          createdAt: new Date(app.createdAt),
+          updatedAt: new Date(app.updatedAt),
+          githubOrg: app.githubOrg || null,
+          githubRepo: app.githubRepo || null,
+          githubBranch: app.githubBranch || null,
+          supabaseProjectId: app.supabaseProjectId || null,
+          supabaseProjectName: app.supabaseProjectName || null,
+          neonDevelopmentBranchId: app.neonDevelopmentBranchId || null,
+          neonPreviewBranchId: app.neonPreviewBranchId || null,
+          neonProjectId: app.neonProjectId || null,
+          vercelProjectName: app.vercelProjectName || null,
+          vercelTeamSlug: app.vercelTeamSlug || null,
+          vercelProjectId: app.vercelProjectId || null,
+          vercelDeploymentUrl: app.vercelDeploymentUrl || null,
+          installCommand: app.installCommand || null,
+          startCommand: app.startCommand || null,
+        }}
         refreshApp={refreshApp}
       />
     );

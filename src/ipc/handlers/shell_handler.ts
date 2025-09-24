@@ -1,12 +1,11 @@
-import { shell } from "electron";
+import { shell , ipcMain } from "electron";
 import log from "electron-log";
-import { createLoggedHandler } from "./safe_handle";
+
 
 const logger = log.scope("shell_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerShellHandlers() {
-  handle("open-external-url", async (_event, url: string) => {
+  ipcMain.handle("open-external-url", async (_event, url: string) => {
     if (!url) {
       throw new Error("No URL provided.");
     }
@@ -17,7 +16,7 @@ export function registerShellHandlers() {
     logger.debug("Opened external URL:", url);
   });
 
-  handle("show-item-in-folder", async (_event, fullPath: string) => {
+  ipcMain.handle("show-item-in-folder", async (_event, fullPath: string) => {
     // Validate that a path was provided
     if (!fullPath) {
       throw new Error("No file path provided.");

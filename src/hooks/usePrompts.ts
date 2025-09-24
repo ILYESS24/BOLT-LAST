@@ -16,7 +16,7 @@ export function usePrompts() {
     queryKey: ["prompts"],
     queryFn: async (): Promise<PromptItem[]> => {
       const ipc = IpcClient.getInstance();
-      return ipc.listPrompts();
+      return ipc.getPrompts();
     },
     meta: { showErrorToast: true },
   });
@@ -28,7 +28,15 @@ export function usePrompts() {
       content: string;
     }): Promise<PromptItem> => {
       const ipc = IpcClient.getInstance();
-      return ipc.createPrompt(params);
+      await ipc.createPrompt(params);
+      return {
+        id: Date.now(),
+        title: params.title,
+        description: params.description || null,
+        content: params.content,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
@@ -46,7 +54,7 @@ export function usePrompts() {
       content: string;
     }): Promise<void> => {
       const ipc = IpcClient.getInstance();
-      return ipc.updatePrompt(params);
+      return ipc.updatePrompt(params.id.toString(), params);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
@@ -59,7 +67,7 @@ export function usePrompts() {
   const deleteMutation = useMutation({
     mutationFn: async (id: number): Promise<void> => {
       const ipc = IpcClient.getInstance();
-      return ipc.deletePrompt(id);
+      return ipc.deletePrompt(id.toString());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });

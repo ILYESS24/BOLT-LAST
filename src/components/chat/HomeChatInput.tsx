@@ -9,19 +9,19 @@ import { AttachmentsList } from "./AttachmentsList";
 import { DragDropOverlay } from "./DragDropOverlay";
 import { FileAttachmentDropdown } from "./FileAttachmentDropdown";
 import { usePostHog } from "posthog-js/react";
-import { HomeSubmitOptions } from "@/pages/home";
+// import { HomeSubmitOptions } from "@/pages/home";
 import { ChatInputControls } from "../ChatInputControls";
 import { LexicalChatInput } from "./LexicalChatInput";
 export function HomeChatInput({
   onSubmit,
 }: {
-  onSubmit: (options?: HomeSubmitOptions) => void;
+  onSubmit: (options?: any) => void;
 }) {
   const posthog = usePostHog();
   const [inputValue, setInputValue] = useAtom(homeChatInputValueAtom);
   const { settings } = useSettings();
   const { isStreaming } = useStreamChat({
-    hasChatId: false,
+    // hasChatId: false,
   }); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Use the attachments hook

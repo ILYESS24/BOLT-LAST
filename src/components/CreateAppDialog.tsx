@@ -59,7 +59,7 @@ export function CreateAppDialog({
           appName: result.app.name,
         });
       }
-      setSelectedAppId(result.app.id);
+      setSelectedAppId(result.app.id.toString());
       // Navigate to the new app's first chat
       router.navigate({
         to: "/chat",

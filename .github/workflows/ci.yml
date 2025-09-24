@@ -1,149 +1,245 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, develop ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+  schedule:
+    # Exécution quotidienne à 2h du matin UTC pour les analyses de sécurité
+    - cron: '0 2 * * *'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-defaults:
-  run:
-    shell: bash
+env:
+  NODE_VERSION: '20'
+  ELECTRON_VERSION: '35.1.4'
 
 jobs:
-  test:
-    # Why Mac and Windows?
-    # I can't run electron playwright on ubuntu-latest and
-    # Linux support for Dyad is experimental so not as important
-    # as Mac + Windows
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [
-            # npm install is very slow
-            # { name: "windows-arm", image: "windows-11-arm" },
-            { name: "windows", image: "windows-latest" },
-            { name: "macos", image: "macos-latest" },
-          ]
-        shard: [1, 2, 3, 4]
-        shardTotal: [4]
-    runs-on: ${{ matrix.os.image }}
+  # Job de vérification de la qualité du code
+  code-quality:
+    name: Code Quality & Static Analysis
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Initialize environment
+        with:
+          fetch-depth: 0  # Nécessaire pour SonarCloud
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: package.json
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Install node modules
-        run: npm ci --no-audit --no-fund --progress=false
-      - name: Presubmit check (e.g. lint, format)
-        # do not run this on Windows (it fails and not necessary)
-        # Only run on shard 1 to avoid redundant execution
-        if: contains(matrix.os.name, 'macos') && matrix.shard == 1
-        run: npm run presubmit
-      - name: Type-checking
-        # do not run this on windows (it's redunant)
-        # Only run on shard 1 to avoid redundant execution
-        if: contains(matrix.os.name, 'macos') && matrix.shard == 1
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript compilation check
         run: npm run ts
-      - name: Unit tests
-        # do not run this on windows (it's redunant)
-        # Only run on shard 1 to avoid redundant execution
-        if: contains(matrix.os.name, 'macos') && matrix.shard == 1
-        run: npm run test
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: latest
-      - name: Clone nextjs-template
-        run: git clone --depth 1 https://github.com/dyad-sh/nextjs-template.git nextjs-template
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ matrix.os.name }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ matrix.os.name }}-pnpm-store-
-      # Not strictly needed but makes the e2e tests faster (and less flaky)
-      - name: Install scaffold dependencies
-        run: cd scaffold && pnpm install
-      - name: Install nextjs-template dependencies
-        run: cd nextjs-template && pnpm install
-      - name: Install Chromium browser for Playwright
-        run: npx playwright install chromium --with-deps
-      - name: Build
+
+      - name: Linting with oxlint
+        run: npm run lint
+
+      - name: Prettier check
+        run: npm run prettier:check
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
         env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
-        run: npm run pre:e2e
-      - name: Prep test server
-        run: cd testing/fake-llm-server && npm install && npm run build && cd -
-      - name: E2E tests (Shard ${{ matrix.shard }}/4)
-        # You can add debug logging to make it easier to see what's failing
-        # by adding "DEBUG=pw:browser" in front.
-        # Use blob reporter for sharding and merge capabilities
-        run: DEBUG=pw:browser npx playwright test --shard=${{ matrix.shard }}/${{ matrix.shardTotal }}
-      - name: Upload shard results
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: ${{ !cancelled() }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          name: blob-report-${{ matrix.os.name }}-shard-${{ matrix.shard }}
-          path: blob-report
-          retention-days: 1
+          args: >
+            -Dsonar.projectKey=dyad-sh_dyad
+            -Dsonar.organization=dyad-sh
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info
 
-  merge-reports:
-    # Merge reports after playwright-tests, even if some shards have failed
-    if: ${{ !cancelled() }}
-    needs: [test]
-
+  # Job de tests unitaires et génératifs
+  unit-tests:
+    name: Unit Tests & Generative Testing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund --progress=false
+        run: npm ci
 
-      - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v4
+      - name: Run unit tests with coverage
+        run: npm run test -- --coverage
+
+      - name: Run generative tests
+        run: npm run test:generative
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          path: all-blob-reports
-          pattern: blob-report-*
-          merge-multiple: true
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
 
-      - name: Debug - List downloaded blob reports
-        run: |
-          echo "Contents of all-blob-reports directory:"
-          ls -la all-blob-reports/
-          echo "File sizes and details:"
-          find all-blob-reports/ -type f -exec ls -lh {} \; || echo "No files found"
+  # Job de tests E2E
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Merge into HTML Report
-        run: PLAYWRIGHT_HTML_OUTPUT_DIR=playwright-report npx playwright merge-reports --config=merge.config.ts ./all-blob-reports
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Debug - List playwright-report contents
-        run: |
-          echo "Contents of playwright-report directory:"
-          ls -la playwright-report/ || echo "playwright-report directory does not exist"
-          echo "Current directory contents:"
-          ls -la
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Upload HTML report
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run pre:e2e
+
+      - name: Run Playwright tests
+        run: npm run e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  # Job d'analyse de sécurité avec CodeQL
+  security-analysis:
+    name: Security Analysis (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run ts
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # Job de scan des dépendances avec Snyk
+  dependency-scan:
+    name: Dependency Security Scan (Snyk)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=package.json
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+
+  # Job de build cross-platform
+  build:
+    name: Build Application
+    runs-on: ${{ matrix.os }}
+    needs: [code-quality, unit-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run package
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: html-report--attempt-${{ github.run_attempt }}
-          path: playwright-report
-          retention-days: 3
+          name: build-${{ matrix.os }}
+          path: out/
+          retention-days: 7
+
+  # Job de notification (optionnel)
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests, e2e-tests, security-analysis, dependency-scan, build]
+    if: always()
+    steps:
+      - name: Notify on success
+        if: ${{ needs.code-quality.result == 'success' && needs.unit-tests.result == 'success' && needs.e2e-tests.result == 'success' }}
+        run: |
+          echo "✅ Tous les tests sont passés avec succès!"
+          echo "Pipeline terminé avec succès pour le commit ${{ github.sha }}"
+
+      - name: Notify on failure
+        if: ${{ needs.code-quality.result == 'failure' || needs.unit-tests.result == 'failure' || needs.e2e-tests.result == 'failure' }}
+        run: |
+          echo "❌ Certains tests ont échoué"
+          echo "Vérifiez les logs pour plus de détails"
+          exit 1

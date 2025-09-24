@@ -1,113 +1,84 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { LightbulbIcon } from "lucide-react";
-import { ErrorComponentProps } from "@tanstack/react-router";
-import { usePostHog } from "posthog-js/react";
-import { IpcClient } from "@/ipc/ipc_client";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from './ui/button';
 
-export function ErrorBoundary({ error }: ErrorComponentProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const posthog = usePostHog();
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
 
-  useEffect(() => {
-    console.error("An error occurred in the route:", error);
-    posthog.captureException(error);
-  }, [error]);
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
 
-  const handleReportBug = async () => {
-    setIsLoading(true);
-    try {
-      // Get system debug info
-      const debugInfo = await IpcClient.getInstance().getSystemDebugInfo();
-
-      // Create a formatted issue body with the debug info and error information
-      const issueBody = `
-## Bug Description
-<!-- Please describe the issue you're experiencing -->
-
-## Steps to Reproduce
-<!-- Please list the steps to reproduce the issue -->
-
-## Expected Behavior
-<!-- What did you expect to happen? -->
-
-## Actual Behavior
-<!-- What actually happened? -->
-
-## Error Details
-- Error Name: ${error?.name || "Unknown"}
-- Error Message: ${error?.message || "Unknown"}
-${error?.stack ? `\n\`\`\`\n${error.stack.slice(0, 1000)}\n\`\`\`` : ""}
-
-## System Information
-- Dyad Version: ${debugInfo.dyadVersion}
-- Platform: ${debugInfo.platform}
-- Architecture: ${debugInfo.architecture}
-- Node Version: ${debugInfo.nodeVersion || "Not available"}
-- PNPM Version: ${debugInfo.pnpmVersion || "Not available"}
-- Node Path: ${debugInfo.nodePath || "Not available"}
-- Telemetry ID: ${debugInfo.telemetryId || "Not available"}
-
-## Logs
-\`\`\`
-${debugInfo.logs.slice(-3_500) || "No logs available"}
-\`\`\`
-`;
-
-      // Create the GitHub issue URL with the pre-filled body
-      const encodedBody = encodeURIComponent(issueBody);
-      const encodedTitle = encodeURIComponent(
-        "[bug] Error in Dyad application",
-      );
-      const githubIssueUrl = `https://github.com/dyad-sh/dyad/issues/new?title=${encodedTitle}&labels=bug,filed-from-app,client-error&body=${encodedBody}`;
-
-      // Open the pre-filled GitHub issue page
-      await IpcClient.getInstance().openExternalUrl(githubIssueUrl);
-    } catch (err) {
-      console.error("Failed to prepare bug report:", err);
-      // Fallback to opening the regular GitHub issue page
-      IpcClient.getInstance().openExternalUrl(
-        "https://github.com/dyad-sh/dyad/issues/new",
-      );
-    } finally {
-      setIsLoading(false);
-    }
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center h-screen p-6">
-      <div className="max-w-md w-full bg-background p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-4">
-          Sorry, that shouldn't have happened!
-        </h2>
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
 
-        <p className="text-sm mb-3">There was an error loading the app...</p>
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
 
-        {error && (
-          <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-md mb-6">
-            <p className="text-sm mb-1">
-              <strong>Error name:</strong> {error.name}
-            </p>
-            <p className="text-sm">
-              <strong>Error message:</strong> {error.message}
-            </p>
+  private handleReset = () => {
+    this.setState({ hasError: false, error: undefined });
+  };
+
+  public render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="max-w-md w-full mx-auto p-6">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-foreground mb-4">
+                Oups ! Quelque chose s'est mal passé
+              </h1>
+              <p className="text-muted-foreground mb-6">
+                Une erreur inattendue s'est produite. Veuillez réessayer ou recharger la page.
+              </p>
+              
+              {this.state.error && (
+                <details className="mb-6 text-left">
+                  <summary className="cursor-pointer text-sm font-medium text-muted-foreground mb-2">
+                    Détails de l'erreur
+                  </summary>
+                  <pre className="text-xs bg-muted p-3 rounded-md overflow-auto">
+                    {this.state.error.message}
+                    {this.state.error.stack && (
+                      <>
+                        {'\n\n'}
+                        {this.state.error.stack}
+                      </>
+                    )}
+                  </pre>
+                </details>
+              )}
+
+              <div className="space-x-4">
+                <Button onClick={this.handleReset}>
+                  Réessayer
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.reload()}
+                >
+                  Recharger la page
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
-
-        <div className="flex flex-col gap-2">
-          <Button onClick={handleReportBug} disabled={isLoading}>
-            {isLoading ? "Preparing report..." : "Report Bug"}
-          </Button>
         </div>
+      );
+    }
 
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
-          <LightbulbIcon className="h-4 w-4 text-blue-700 dark:text-blue-400 flex-shrink-0" />
-          <p className="text-sm text-blue-700 dark:text-blue-400">
-            <strong>Tip:</strong> Try closing and re-opening Dyad as a temporary
-            workaround.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+    return this.props.children;
+  }
 }

@@ -1,19 +1,18 @@
 import fetch from "node-fetch"; // Electron main process might need node-fetch
 import log from "electron-log";
-import { createLoggedHandler } from "./safe_handle";
 import { readSettings } from "../../main/settings"; // Assuming settings are read this way
 import { UserBudgetInfo, UserBudgetInfoSchema } from "../ipc_types";
 import { IS_TEST_BUILD } from "../utils/test_utils";
+import { ipcMain } from "electron";
 
 const logger = log.scope("pro_handlers");
-const handle = createLoggedHandler(logger);
 
 const CONVERSION_RATIO = (10 * 3) / 2;
 
 export function registerProHandlers() {
   // This method should try to avoid throwing errors because this is auxiliary
   // information and isn't critical to using the app
-  handle("get-user-budget", async (): Promise<UserBudgetInfo | null> => {
+  ipcMain.handle("get-user-budget", async (): Promise<UserBudgetInfo | null> => {
     if (IS_TEST_BUILD) {
       // Avoid spamming the API in E2E tests.
       return null;

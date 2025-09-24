@@ -25,7 +25,7 @@ export function useRenameBranch() {
       if (!params.newBranchName) {
         throw new Error("New branch name is required.");
       }
-      await IpcClient.getInstance().renameBranch(params);
+      await IpcClient.getInstance().renameBranch(params.appId.toString(), params.oldBranchName, params.newBranchName);
     },
     onSuccess: (_, variables) => {
       // Invalidate queries that depend on branch information
@@ -47,7 +47,7 @@ export function useRenameBranch() {
       showError("No application selected.");
       return;
     }
-    return mutation.mutateAsync({ ...params, appId: currentAppId });
+    return mutation.mutateAsync({ ...params, appId: parseInt(currentAppId.toString()) });
   };
 
   return {

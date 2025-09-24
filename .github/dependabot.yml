@@ -1,0 +1,46 @@
+# Configuration Dependabot pour la mise à jour automatique des dépendances
+version: 2
+updates:
+  # Mise à jour des dépendances npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "dyad-sh"
+    assignees:
+      - "dyad-sh"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    ignore:
+      # Ignorer les mises à jour majeures automatiques
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Mise à jour des actions GitHub
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "dyad-sh"
+    assignees:
+      - "dyad-sh"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "automated"

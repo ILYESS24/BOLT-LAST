@@ -22,15 +22,15 @@ export function SelectedComponentDisplay() {
           <div className="flex flex-col overflow-hidden">
             <span
               className="truncate font-medium text-indigo-800 dark:text-indigo-300"
-              title={selectedComponent.name}
+              title={(selectedComponent as any).name}
             >
-              {selectedComponent.name}
+              {(selectedComponent as any).name}
             </span>
             <span
               className="truncate text-xs text-indigo-600/80 dark:text-indigo-400/80"
-              title={`${selectedComponent.relativePath}:${selectedComponent.lineNumber}`}
+              title={`${(selectedComponent as any).relativePath}:${(selectedComponent as any).lineNumber}`}
             >
-              {selectedComponent.relativePath}:{selectedComponent.lineNumber}
+              {(selectedComponent as any).relativePath}:{(selectedComponent as any).lineNumber}
             </span>
           </div>
         </div>

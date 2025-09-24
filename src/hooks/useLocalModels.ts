@@ -20,7 +20,7 @@ export function useLocalModels() {
   const loadModels = useCallback(async () => {
     setLoading(true);
     try {
-      const modelList = await ipcClient.listLocalOllamaModels();
+      const modelList = await ipcClient.getLocalModels();
       setModels(modelList);
       setError(null);
 

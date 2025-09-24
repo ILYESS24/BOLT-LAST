@@ -47,7 +47,7 @@ export function RenameChatDialog({
 
     try {
       await IpcClient.getInstance().updateChat({
-        chatId,
+        chatId: chatId.toString(),
         title: newTitle.trim(),
       });
       showSuccess("Chat renamed successfully");

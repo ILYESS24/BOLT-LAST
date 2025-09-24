@@ -21,7 +21,7 @@ export function SupabaseIntegration() {
         // Also disable the migration setting on disconnect
         enableSupabaseWriteSqlMigration: false,
       });
-      if (result) {
+      if (result !== undefined) {
         showSuccess("Successfully disconnected from Supabase");
       } else {
         showError("Failed to disconnect from Supabase");

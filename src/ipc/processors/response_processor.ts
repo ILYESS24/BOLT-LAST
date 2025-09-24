@@ -401,7 +401,7 @@ export async function processFullResponseActions(
       if (dyadExecuteSqlQueries.length > 0)
         changes.push(`executed ${dyadExecuteSqlQueries.length} SQL queries`);
 
-      let message = chatSummary
+      const message = chatSummary
         ? `[dyad] ${chatSummary} - ${changes.join(", ")}`
         : `[dyad] ${changes.join(", ")}`;
       // Use chat summary, if provided, or default for commit message

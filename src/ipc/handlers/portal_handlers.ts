@@ -1,4 +1,3 @@
-import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
 import { db } from "../../db";
 import { apps } from "../../db/schema";
@@ -9,9 +8,9 @@ import fs from "node:fs";
 import git from "isomorphic-git";
 import { gitCommit } from "../utils/git_utils";
 import { storeDbTimestampAtCurrentVersion } from "../utils/neon_timestamp_utils";
+import { ipcMain } from "electron";
 
 const logger = log.scope("portal_handlers");
-const handle = createLoggedHandler(logger);
 
 async function getApp(appId: number) {
   const app = await db.query.apps.findFirst({
@@ -24,7 +23,7 @@ async function getApp(appId: number) {
 }
 
 export function registerPortalHandlers() {
-  handle(
+  ipcMain.handle(
     "portal:migrate-create",
     async (_, { appId }: { appId: number }): Promise<{ output: string }> => {
       const app = await getApp(appId);

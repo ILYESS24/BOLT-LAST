@@ -3,14 +3,12 @@ import { messages, apps, chats } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { getDyadAppPath } from "../../paths/paths";
 import { executeAddDependency } from "../processors/executeAddDependency";
-import { createLoggedHandler } from "./safe_handle";
-import log from "electron-log";
+// import log from "electron-log";
+import { ipcMain } from "electron";
 
-const logger = log.scope("dependency_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerDependencyHandlers() {
-  handle(
+  ipcMain.handle(
     "chat:add-dep",
     async (
       _event,

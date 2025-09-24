@@ -4,7 +4,6 @@ import type {
   CreateCustomLanguageModelProviderParams,
   CreateCustomLanguageModelParams,
 } from "@/ipc/ipc_types";
-import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
 import {
   CUSTOM_PROVIDER_PREFIX,
@@ -19,20 +18,19 @@ import {
   language_models as languageModelsSchema,
 } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { IpcMainInvokeEvent } from "electron";
+import { IpcMainInvokeEvent, ipcMain } from "electron";
 
 const logger = log.scope("language_model_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerLanguageModelHandlers() {
-  handle(
+  ipcMain.handle(
     "get-language-model-providers",
     async (): Promise<LanguageModelProvider[]> => {
       return getLanguageModelProviders();
     },
   );
 
-  handle(
+  ipcMain.handle(
     "create-custom-language-model-provider",
     async (
       event: IpcMainInvokeEvent,
@@ -84,7 +82,7 @@ export function registerLanguageModelHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "create-custom-language-model",
     async (
       event: IpcMainInvokeEvent,
@@ -130,7 +128,7 @@ export function registerLanguageModelHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "delete-custom-language-model",
     async (
       event: IpcMainInvokeEvent,
@@ -165,7 +163,7 @@ export function registerLanguageModelHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "delete-custom-model",
     async (
       _event: IpcMainInvokeEvent,
@@ -215,7 +213,7 @@ export function registerLanguageModelHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "delete-custom-language-model-provider",
     async (
       event: IpcMainInvokeEvent,
@@ -281,7 +279,7 @@ export function registerLanguageModelHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "get-language-models",
     async (
       event: IpcMainInvokeEvent,
@@ -302,7 +300,7 @@ export function registerLanguageModelHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "get-language-models-by-providers",
     async (): Promise<Record<string, LanguageModel[]>> => {
       return getLanguageModelsByProviders();

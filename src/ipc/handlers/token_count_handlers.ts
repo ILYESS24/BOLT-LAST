@@ -14,21 +14,19 @@ import log from "electron-log";
 import { extractCodebase } from "../../utils/codebase";
 import { getSupabaseContext } from "../../supabase_admin/supabase_context";
 
-import { TokenCountParams } from "../ipc_types";
-import { TokenCountResult } from "../ipc_types";
+import { TokenCountParams , TokenCountResult } from "../ipc_types";
+
 import { estimateTokens, getContextWindow } from "../utils/token_utils";
-import { createLoggedHandler } from "./safe_handle";
 import { validateChatContext } from "../utils/context_paths_utils";
 import { readSettings } from "@/main/settings";
 import { extractMentionedAppsCodebases } from "../utils/mention_apps";
 import { parseAppMentions } from "@/shared/parse_mention_apps";
+import { ipcMain } from "electron";
 
 const logger = log.scope("token_count_handlers");
 
-const handle = createLoggedHandler(logger);
-
 export function registerTokenCountHandlers() {
-  handle(
+  ipcMain.handle(
     "chat:count-tokens",
     async (event, req: TokenCountParams): Promise<TokenCountResult> => {
       const chat = await db.query.chats.findFirst({

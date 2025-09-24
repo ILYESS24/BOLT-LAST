@@ -1,6 +1,6 @@
-import { sql } from "drizzle-orm";
+import { sql , relations } from "drizzle-orm";
 import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+
 
 export const prompts = sqliteTable("prompts", {
   id: integer("id").primaryKey({ autoIncrement: true }),

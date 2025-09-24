@@ -86,7 +86,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
 };
 
 export const FileEditor = ({ appId, filePath }: FileEditorProps) => {
-  const { content, loading, error } = useLoadAppFile(appId, filePath);
+  const { content, loading, error } = useLoadAppFile(appId?.toString(), filePath);
   const { theme } = useTheme();
   const [value, setValue] = useState<string | undefined>(undefined);
   const [displayUnsavedChanges, setDisplayUnsavedChanges] = useState(false);
@@ -164,11 +164,11 @@ export const FileEditor = ({ appId, filePath }: FileEditorProps) => {
       setIsSaving(true);
 
       const ipcClient = IpcClient.getInstance();
-      const { warning } = await ipcClient.editAppFile(
-        appId,
+      const { warning } = await ipcClient.editAppFile({
+        appId: appId?.toString() || "",
         filePath,
-        currentValueRef.current,
-      );
+        content: currentValueRef.current,
+      });
       await queryClient.invalidateQueries({ queryKey: ["versions", appId] });
       if (settings?.enableAutoFixProblems) {
         checkProblems();
@@ -224,7 +224,7 @@ export const FileEditor = ({ appId, filePath }: FileEditorProps) => {
   }
 
   if (error) {
-    return <div className="p-4 text-red-500">Error: {error.message}</div>;
+    return <div className="p-4 text-red-500">Error: {String(error)}</div>;
   }
 
   if (!content) {

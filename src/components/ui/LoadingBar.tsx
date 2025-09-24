@@ -1,20 +1,33 @@
-import { cn } from "@/lib/utils";
-import React from "react";
+import React from 'react';
+import { cn } from '@/lib/utils';
 
-export const LoadingBar: React.FC<{ isVisible: boolean }> = ({ isVisible }) => {
+interface LoadingBarProps {
+  progress?: number;
+  className?: string;
+  showPercentage?: boolean;
+}
+
+export function LoadingBar({ 
+  progress = 0, 
+  className,
+  showPercentage = true 
+}: LoadingBarProps) {
   return (
-    <div
-      key="loading-bar"
-      className={cn(
-        "relative w-full h-1 bg-primary/20 overflow-hidden",
-        isVisible ? "" : "invisible",
-      )}
-    >
-      <div
-        className={cn(
-          "absolute top-0 left-0 h-full w-1/2 bg-primary animate-marquee",
+    <div className={cn("w-full", className)}>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-sm font-medium">Chargement</span>
+        {showPercentage && (
+          <span className="text-sm text-muted-foreground">
+            {Math.round(progress)}%
+          </span>
         )}
-      />
+      </div>
+      <div className="w-full bg-secondary rounded-full h-2">
+        <div
+          className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
+          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+        />
+      </div>
     </div>
   );
-};
+}

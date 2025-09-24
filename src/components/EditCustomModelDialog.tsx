@@ -87,7 +87,7 @@ export function EditCustomModelDialog({
       });
 
       // Then create the new model
-      await ipcClient.createCustomLanguageModel(newParams);
+      await ipcClient.createCustomLanguageModelProvider(newParams);
     },
     onSuccess: () => {
       showSuccess("Custom model updated successfully!");

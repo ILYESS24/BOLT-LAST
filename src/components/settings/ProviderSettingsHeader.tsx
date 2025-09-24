@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IpcClient } from "@/ipc/ipc_client";
+// import { IpcClient } from "@/ipc/ipc_client";
 
 interface ProviderSettingsHeaderProps {
   providerDisplayName: string;
@@ -47,7 +47,7 @@ export function ProviderSettingsHeader({
   const handleGetApiKeyClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (providerWebsiteUrl) {
-      IpcClient.getInstance().openExternalUrl(providerWebsiteUrl);
+      // IpcClient.getInstance().openExternalUrl(providerWebsiteUrl);
     }
   };
 

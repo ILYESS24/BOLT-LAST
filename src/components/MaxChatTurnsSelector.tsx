@@ -52,16 +52,16 @@ export const MaxChatTurnsSelector: React.FC = () => {
 
   const handleValueChange = (value: string) => {
     if (value === "default") {
-      updateSettings({ maxChatTurnsInContext: undefined });
+      updateSettings({ maxChatTurnsInContext: undefined } as any);
     } else {
       const numValue = parseInt(value, 10);
-      updateSettings({ maxChatTurnsInContext: numValue });
+      updateSettings({ maxChatTurnsInContext: numValue } as any);
     }
   };
 
   // Determine the current value
   const currentValue =
-    settings?.maxChatTurnsInContext?.toString() || defaultValue;
+    (settings as any)?.maxChatTurnsInContext?.toString() || defaultValue;
 
   // Find the current option to display its description
   const currentOption =

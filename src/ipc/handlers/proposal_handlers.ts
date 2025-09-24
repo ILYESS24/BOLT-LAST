@@ -29,13 +29,12 @@ import {
 import { extractCodebase } from "../../utils/codebase";
 import { getDyadAppPath } from "../../paths/paths";
 import { withLock } from "../utils/lock_utils";
-import { createLoggedHandler } from "./safe_handle";
 import { ApproveProposalResult } from "../ipc_types";
 import { validateChatContext } from "../utils/context_paths_utils";
 import { readSettings } from "@/main/settings";
+import { ipcMain } from "electron";
 
 const logger = log.scope("proposal_handlers");
-const handle = createLoggedHandler(logger);
 // Cache for codebase token counts
 interface CodebaseTokenCache {
   chatId: number;
@@ -124,7 +123,7 @@ const getProposalHandler = async (
   _event: IpcMainInvokeEvent,
   { chatId }: { chatId: number },
 ): Promise<ProposalResult | null> => {
-  return withLock("get-proposal:" + chatId, async () => {
+  return withLock("get-proposal:" + chatId, async (): Promise<ProposalResult | null> => {
     logger.log(`IPC: get-proposal called for chatId: ${chatId}`);
 
     try {
@@ -188,8 +187,10 @@ const getProposalHandler = async (
           proposalExecuteSqlQueries.length > 0
         ) {
           const proposal: CodeProposal = {
+            id: `proposal_${chatId}_${Date.now()}`,
             type: "code-proposal",
-            // Use parsed title or a default title if summary tag is missing but write tags exist
+            filePath: filesChanged[0]?.path || "",
+            description: proposalTitle ?? "Proposed File Changes",
             title: proposalTitle ?? "Proposed File Changes",
             securityRisks: [], // Keep empty
             filesChanged,
@@ -203,15 +204,14 @@ const getProposalHandler = async (
             "Generated code proposal. title=",
             proposal.title,
             "files=",
-            proposal.filesChanged.length,
+            proposal.filesChanged?.length || 0,
             "packages=",
-            proposal.packagesAdded.length,
+            proposal.packagesAdded?.length || 0,
           );
 
           return {
+            success: true,
             proposal: proposal,
-            chatId,
-            messageId,
           };
         } else {
           logger.log(
@@ -313,12 +313,15 @@ const getProposalHandler = async (
           id: "keep-going",
         });
         return {
+          success: true,
           proposal: {
+            id: `action_proposal_${chatId}_${Date.now()}`,
             type: "action-proposal",
+            filePath: "",
+            description: "Action proposal",
+            title: "Action proposal",
             actions: actions,
           },
-          chatId,
-          messageId: latestAssistantMessage.id,
         };
       }
       return null;
@@ -417,7 +420,7 @@ const rejectProposalHandler = async (
 
 // Function to register proposal-related handlers
 export function registerProposalHandlers() {
-  handle("get-proposal", getProposalHandler);
-  handle("approve-proposal", approveProposalHandler);
-  handle("reject-proposal", rejectProposalHandler);
+  ipcMain.handle("get-proposal", getProposalHandler);
+  ipcMain.handle("approve-proposal", approveProposalHandler);
+  ipcMain.handle("reject-proposal", rejectProposalHandler);
 }

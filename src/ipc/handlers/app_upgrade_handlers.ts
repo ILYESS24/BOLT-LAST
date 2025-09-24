@@ -1,4 +1,3 @@
-import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
 import { AppUpgrade } from "../ipc_types";
 import { db } from "../../db";
@@ -10,9 +9,9 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { gitAddAll, gitCommit } from "../utils/git_utils";
 import { simpleSpawn } from "../utils/simpleSpawn";
+import { ipcMain } from "electron";
 
 export const logger = log.scope("app_upgrade_handlers");
-const handle = createLoggedHandler(logger);
 
 const availableUpgrades: Omit<AppUpgrade, "isNeeded">[] = [
   {
@@ -249,7 +248,7 @@ async function applyCapacitor({
 }
 
 export function registerAppUpgradeHandlers() {
-  handle(
+  ipcMain.handle(
     "get-app-upgrades",
     async (_, { appId }: { appId: number }): Promise<AppUpgrade[]> => {
       const app = await getApp(appId);
@@ -269,7 +268,7 @@ export function registerAppUpgradeHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "execute-app-upgrade",
     async (_, { appId, upgradeId }: { appId: number; upgradeId: string }) => {
       if (!upgradeId) {

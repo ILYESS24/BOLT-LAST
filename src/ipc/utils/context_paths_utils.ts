@@ -6,9 +6,12 @@ const logger = log.scope("context_paths_utils");
 export function validateChatContext(chatContext: unknown): AppChatContext {
   if (!chatContext) {
     return {
+      appId: "0",
+      chatId: "0",
       contextPaths: [],
       smartContextAutoIncludes: [],
       excludePaths: [],
+      lastUpdated: new Date().toISOString(),
     };
   }
 
@@ -19,9 +22,12 @@ export function validateChatContext(chatContext: unknown): AppChatContext {
     logger.warn("Invalid contextPaths data:", error);
     // Return empty array as fallback if validation fails
     return {
+      appId: "0",
+      chatId: "0",
       contextPaths: [],
       smartContextAutoIncludes: [],
       excludePaths: [],
+      lastUpdated: new Date().toISOString(),
     };
   }
 }

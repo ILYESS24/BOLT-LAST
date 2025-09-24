@@ -122,7 +122,14 @@ export function getDyadExecuteSqlTags(fullResponse: string): SqlQuery[] {
     queries.push({ content, description });
   }
 
-  return queries;
+  return queries.map((query, index) => ({
+    id: `sql_${Date.now()}_${index}`,
+    query: query.content,
+    content: query.content,
+    description: query.description,
+    appId: "0", // App par défaut
+    createdAt: new Date().toISOString(),
+  }));
 }
 
 export function getDyadCommandTags(fullResponse: string): string[] {

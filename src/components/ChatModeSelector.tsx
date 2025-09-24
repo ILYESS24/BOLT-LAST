@@ -1,5 +1,5 @@
 import {
-  MiniSelectTrigger,
+  SelectTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
 export function ChatModeSelector() {
   const { settings, updateSettings } = useSettings();
 
-  const selectedMode = settings?.selectedChatMode || "build";
+  const selectedMode = (settings as any)?.selectedChatMode || "build";
 
   const handleModeChange = (value: string) => {
-    updateSettings({ selectedChatMode: value as ChatMode });
+    updateSettings({ selectedChatMode: value as any } as any);
   };
 
   const getModeDisplayName = (mode: ChatMode) => {
@@ -38,7 +38,7 @@ export function ChatModeSelector() {
     <Select value={selectedMode} onValueChange={handleModeChange}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <MiniSelectTrigger
+          <SelectTrigger
             data-testid="chat-mode-selector"
             className={cn(
               "h-6 w-fit px-1.5 py-0 text-xs-sm font-medium shadow-none gap-0.5",
@@ -46,10 +46,9 @@ export function ChatModeSelector() {
                 ? "bg-background hover:bg-muted/50 focus:bg-muted/50"
                 : "bg-primary/10 hover:bg-primary/20 focus:bg-primary/20 text-primary border-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 dark:focus:bg-primary/30",
             )}
-            size="sm"
           >
             <SelectValue>{getModeDisplayName(selectedMode)}</SelectValue>
-          </MiniSelectTrigger>
+          </SelectTrigger>
         </TooltipTrigger>
         <TooltipContent>Open mode menu</TooltipContent>
       </Tooltip>

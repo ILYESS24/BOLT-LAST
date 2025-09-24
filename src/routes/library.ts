@@ -1,9 +1,8 @@
-import { Route } from "@tanstack/react-router";
-import { rootRoute } from "./root";
-import LibraryPage from "@/pages/library";
+import { createFileRoute } from '@tanstack/react-router';
+import { LibraryPage } from '../pages/library';
 
-export const libraryRoute = new Route({
-  getParentRoute: () => rootRoute,
-  path: "/library",
+export const Route = createFileRoute('/library' as any)({
   component: LibraryPage,
 });
+
+export const libraryRoute = Route;

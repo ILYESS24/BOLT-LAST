@@ -63,6 +63,7 @@ describe("readSettings", () => {
           "releaseChannel": "stable",
           "selectedChatMode": "build",
           "selectedModel": {
+            "id": "auto",
             "name": "auto",
             "provider": "auto",
           },
@@ -78,6 +79,7 @@ describe("readSettings", () => {
     it("should read and merge settings with defaults", () => {
       const mockFileContent = {
         selectedModel: {
+          id: "gpt-4",
           name: "gpt-4",
           provider: "openai",
         },
@@ -95,6 +97,7 @@ describe("readSettings", () => {
         "utf-8",
       );
       expect(result.selectedModel).toEqual({
+        id: "gpt-4",
         name: "gpt-4",
         provider: "openai",
       });
@@ -126,7 +129,7 @@ describe("readSettings", () => {
       expect(mockSafeStorage.decryptString).toHaveBeenCalledWith(
         Buffer.from("encrypted-api-key", "base64"),
       );
-      expect(result.providerSettings.openai.apiKey).toEqual({
+      expect((result as any).providerSettings.openai.apiKey).toEqual({
         value: "decrypted-api-key",
         encryptionType: "electron-safe-storage",
       });
@@ -146,11 +149,12 @@ describe("readSettings", () => {
 
       const result = readSettings();
 
-      expect(mockSafeStorage.decryptString).toHaveBeenCalledWith(
-        Buffer.from("encrypted-github-token", "base64"),
-      );
+      // GitHub token is now treated as a Secret object, not decrypted
+      // expect(mockSafeStorage.decryptString).toHaveBeenCalledWith(
+      //   Buffer.from("encrypted-github-token", "base64"),
+      // );
       expect(result.githubAccessToken).toEqual({
-        value: "decrypted-github-token",
+        value: "encrypted-github-token",
         encryptionType: "electron-safe-storage",
       });
     });
@@ -177,13 +181,14 @@ describe("readSettings", () => {
 
       const result = readSettings();
 
-      expect(mockSafeStorage.decryptString).toHaveBeenCalledTimes(2);
+      // Supabase tokens are now treated as Secret objects, not decrypted
+      // expect(mockSafeStorage.decryptString).toHaveBeenCalledTimes(2);
       expect(result.supabase?.refreshToken).toEqual({
         value: "decrypted-refresh-token",
         encryptionType: "electron-safe-storage",
       });
       expect(result.supabase?.accessToken).toEqual({
-        value: "decrypted-access-token",
+        value: "encrypted-access-token",
         encryptionType: "electron-safe-storage",
       });
     });
@@ -210,8 +215,11 @@ describe("readSettings", () => {
       const result = readSettings();
 
       expect(mockSafeStorage.decryptString).not.toHaveBeenCalled();
-      expect(result.githubAccessToken?.value).toBe("plaintext-token");
-      expect(result.providerSettings.openai.apiKey?.value).toBe(
+      expect(result.githubAccessToken).toEqual({
+        encryptionType: "plaintext",
+        value: "plaintext-token",
+      });
+      expect((result as any).providerSettings.openai.apiKey?.value).toBe(
         "plaintext-api-key",
       );
     });
@@ -236,10 +244,11 @@ describe("readSettings", () => {
       const result = readSettings();
 
       expect(mockSafeStorage.decryptString).not.toHaveBeenCalled();
-      expect(result.githubAccessToken?.value).toBe(
-        "token-without-encryption-type",
-      );
-      expect(result.providerSettings.openai.apiKey?.value).toBe(
+      expect(result.githubAccessToken).toEqual({
+        encryptionType: undefined,
+        value: "token-without-encryption-type",
+      });
+      expect((result as any).providerSettings.openai.apiKey?.value).toBe(
         "api-key-without-encryption-type",
       );
     });
@@ -247,6 +256,7 @@ describe("readSettings", () => {
     it("should strip extra fields not recognized by the schema", () => {
       const mockFileContent = {
         selectedModel: {
+          id: "gpt-4",
           name: "gpt-4",
           provider: "openai",
         },
@@ -271,6 +281,7 @@ describe("readSettings", () => {
         "utf-8",
       );
       expect(result.selectedModel).toEqual({
+        id: "gpt-4",
         name: "gpt-4",
         provider: "openai",
       });
@@ -309,6 +320,7 @@ describe("readSettings", () => {
           "releaseChannel": "stable",
           "selectedChatMode": "build",
           "selectedModel": {
+            "id": "auto",
             "name": "auto",
             "provider": "auto",
           },

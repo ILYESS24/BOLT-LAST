@@ -32,7 +32,7 @@ const formatDate = (dateString: string) => {
 
 export const NeonConfigure = () => {
   const selectedAppId = useAtomValue(selectedAppIdAtom);
-  const { app } = useLoadApp(selectedAppId);
+  const { app } = useLoadApp(selectedAppId?.toString());
 
   // Query to get Neon project information
   const {
@@ -44,7 +44,7 @@ export const NeonConfigure = () => {
     queryFn: async () => {
       if (!selectedAppId) throw new Error("No app selected");
       const ipcClient = IpcClient.getInstance();
-      return await ipcClient.getNeonProject({ appId: selectedAppId });
+      return await ipcClient.getNeonProject({ appId: selectedAppId?.toString() || "" });
     },
     enabled: !!selectedAppId && !!app?.neonProjectId,
     meta: { showErrorToast: true },

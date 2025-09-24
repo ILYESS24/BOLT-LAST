@@ -1,6 +1,6 @@
 import React from "react";
 import { Folder, FolderOpen } from "lucide-react";
-import { selectedFileAtom } from "@/atoms/viewAtoms";
+import { selectedFileAtom } from "../../atoms/viewAtoms";
 import { useSetAtom } from "jotai";
 
 interface FileTreeProps {
@@ -99,9 +99,7 @@ const TreeNode = ({ node, level }: TreeNodeProps) => {
     if (node.isDirectory) {
       setExpanded(!expanded);
     } else {
-      setSelectedFile({
-        path: node.path,
-      });
+      setSelectedFile(node.path);
     }
   };
 

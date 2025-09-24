@@ -1,4 +1,4 @@
-import { appOutputAtom } from "@/atoms/appAtoms";
+import { appOutputAtom } from "../../atoms/appAtoms";
 import { useAtomValue } from "jotai";
 
 // Console component
@@ -6,7 +6,7 @@ export const Console = () => {
   const appOutput = useAtomValue(appOutputAtom);
   return (
     <div className="font-mono text-xs px-4 h-full overflow-auto">
-      {appOutput.map((output, index) => (
+      {(appOutput as unknown as any[]).map((output: any, index: number) => (
         <div key={index}>{output.message}</div>
       ))}
     </div>

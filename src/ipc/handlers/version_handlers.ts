@@ -13,7 +13,6 @@ import { getDyadAppPath } from "../../paths/paths";
 import git, { type ReadCommitResult } from "isomorphic-git";
 import { withLock } from "../utils/lock_utils";
 import log from "electron-log";
-import { createLoggedHandler } from "./safe_handle";
 import { gitCheckout, gitCommit, gitStageToRevert } from "../utils/git_utils";
 
 import {
@@ -26,10 +25,9 @@ import {
 } from "../utils/app_env_var_utils";
 import { storeDbTimestampAtCurrentVersion } from "../utils/neon_timestamp_utils";
 import { retryOnLocked } from "../utils/retryOnLocked";
+import { ipcMain } from "electron";
 
 const logger = log.scope("version_handlers");
-
-const handle = createLoggedHandler(logger);
 
 async function restoreBranchForPreview({
   appId,
@@ -62,7 +60,7 @@ async function restoreBranchForPreview({
 }
 
 export function registerVersionHandlers() {
-  handle("list-versions", async (_, { appId }: { appId: number }) => {
+  ipcMain.handle("list-versions", async (_, { appId }: { appId: number }) => {
     const app = await db.query.apps.findFirst({
       where: eq(apps.id, appId),
     });
@@ -114,7 +112,7 @@ export function registerVersionHandlers() {
     }) satisfies Version[];
   });
 
-  handle(
+  ipcMain.handle(
     "get-current-branch",
     async (_, { appId }: { appId: number }): Promise<BranchResult> => {
       const app = await db.query.apps.findFirst({
@@ -149,7 +147,7 @@ export function registerVersionHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "revert-version",
     async (
       _,
@@ -319,7 +317,7 @@ export function registerVersionHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "checkout-version",
     async (
       _,

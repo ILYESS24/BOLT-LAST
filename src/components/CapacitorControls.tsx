@@ -43,7 +43,7 @@ export function CapacitorControls({ appId }: CapacitorControlsProps) {
   // Check if Capacitor is installed
   const { data: isCapacitor, isLoading } = useQuery({
     queryKey: ["is-capacitor", appId],
-    queryFn: () => IpcClient.getInstance().isCapacitor({ appId }),
+    queryFn: () => IpcClient.getInstance().isCapacitor({ appId: appId.toString() }),
     enabled: appId !== undefined && appId !== null,
   });
 
@@ -58,10 +58,10 @@ export function CapacitorControls({ appId }: CapacitorControlsProps) {
     mutationFn: async () => {
       setIosStatus("syncing");
       // First sync
-      await IpcClient.getInstance().syncCapacitor({ appId });
+      await IpcClient.getInstance().syncCapacitor({ appId: appId.toString() });
       setIosStatus("opening");
       // Then open iOS
-      await IpcClient.getInstance().openIos({ appId });
+      await IpcClient.getInstance().openIos({ appId: appId.toString() });
     },
     onSuccess: () => {
       setIosStatus("idle");
@@ -78,10 +78,10 @@ export function CapacitorControls({ appId }: CapacitorControlsProps) {
     mutationFn: async () => {
       setAndroidStatus("syncing");
       // First sync
-      await IpcClient.getInstance().syncCapacitor({ appId });
+      await IpcClient.getInstance().syncCapacitor({ appId: appId.toString() });
       setAndroidStatus("opening");
       // Then open Android
-      await IpcClient.getInstance().openAndroid({ appId });
+      await IpcClient.getInstance().openAndroid({ appId: appId.toString() });
     },
     onSuccess: () => {
       setAndroidStatus("idle");

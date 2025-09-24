@@ -3,7 +3,7 @@ import { FileTree } from "./FileTree";
 import { RefreshCw } from "lucide-react";
 import { useLoadApp } from "@/hooks/useLoadApp";
 import { useAtomValue } from "jotai";
-import { selectedFileAtom } from "@/atoms/viewAtoms";
+import { selectedFileAtom } from "../../atoms/viewAtoms";
 
 interface App {
   id?: number;
@@ -18,7 +18,7 @@ export interface CodeViewProps {
 // Code view component that displays app files or status messages
 export const CodeView = ({ loading, app }: CodeViewProps) => {
   const selectedFile = useAtomValue(selectedFileAtom);
-  const { refreshApp } = useLoadApp(app?.id ?? null);
+  const { refreshApp } = useLoadApp(app?.id?.toString());
 
   if (loading) {
     return <div className="text-center py-4">Loading files...</div>;
@@ -53,7 +53,7 @@ export const CodeView = ({ loading, app }: CodeViewProps) => {
           </div>
           <div className="w-2/3">
             {selectedFile ? (
-              <FileEditor appId={app.id ?? null} filePath={selectedFile.path} />
+              <FileEditor appId={app.id ?? null} filePath={selectedFile} />
             ) : (
               <div className="text-center py-4 text-gray-500">
                 Select a file to view

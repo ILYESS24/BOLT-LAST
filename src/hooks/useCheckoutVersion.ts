@@ -4,7 +4,7 @@ import { useSetAtom } from "jotai";
 import { activeCheckoutCounterAtom } from "@/store/appAtoms";
 
 interface CheckoutVersionVariables {
-  appId: number;
+  appId: string | number;
   versionId: string;
 }
 
@@ -22,7 +22,7 @@ export function useCheckoutVersion() {
         const ipcClient = IpcClient.getInstance();
         setActiveCheckouts((prev) => prev + 1); // Increment counter
         try {
-          await ipcClient.checkoutVersion({ appId, versionId });
+          await ipcClient.checkoutVersion(appId.toString(), versionId);
         } finally {
           setActiveCheckouts((prev) => prev - 1); // Decrement counter
         }

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const PublishPanel = () => {
   const selectedAppId = useAtomValue(selectedAppIdAtom);
-  const { app, loading } = useLoadApp(selectedAppId);
+  const { app, loading } = useLoadApp();
 
   if (loading) {
     return (
@@ -80,7 +80,7 @@ export const PublishPanel = () => {
         </div>
 
         {/* Portal Section - Show only if app has neon project */}
-        {app.neonProjectId && <PortalMigrate appId={selectedAppId} />}
+        {app.neonProjectId && <PortalMigrate appId={parseInt(selectedAppId || "0")} />}
 
         {/* GitHub Section */}
         <Card>
@@ -100,11 +100,11 @@ export const PublishPanel = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Sync your code to GitHub for collaboration.
             </p>
-            <GitHubConnector
-              appId={selectedAppId}
-              folderName={app.name}
-              expanded={true}
-            />
+        <GitHubConnector
+          appId={parseInt(selectedAppId || "0")}
+          folderName={app.name}
+          expanded={true}
+        />
           </CardContent>
         </Card>
 
@@ -114,8 +114,8 @@ export const PublishPanel = () => {
             <CardTitle className="flex items-center gap-2">
               <button
                 onClick={() => {
-                  const ipcClient = IpcClient.getInstance();
-                  ipcClient.openExternalUrl("https://vercel.com/dashboard");
+                  const _ipcClient = IpcClient.getInstance();
+                  // ipcClient.openExternalUrl("https://vercel.com/dashboard");
                 }}
                 className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer bg-transparent border-none p-0"
               >
@@ -163,7 +163,7 @@ export const PublishPanel = () => {
                 </div>
               </div>
             ) : (
-              <VercelConnector appId={selectedAppId} folderName={app.name} />
+              <VercelConnector appId={parseInt(selectedAppId || "0")} folderName={app.name} />
             )}
           </CardContent>
         </Card>

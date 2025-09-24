@@ -2,7 +2,7 @@ import { IpcClient } from "@/ipc/ipc_client";
 import { useQuery } from "@tanstack/react-query";
 import type { BranchResult } from "@/ipc/ipc_types";
 
-export function useCurrentBranch(appId: number | null) {
+export function useCurrentBranch(appId: string | number | null) {
   const {
     data: branchInfo,
     isLoading,
@@ -16,7 +16,10 @@ export function useCurrentBranch(appId: number | null) {
         throw new Error("appId is null, cannot fetch current branch.");
       }
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.getCurrentBranch(appId);
+      const branchName = await ipcClient.getCurrentBranch(appId.toString());
+      return {
+        branch: branchName,
+      };
     },
     enabled: appId !== null,
     meta: { showErrorToast: true },

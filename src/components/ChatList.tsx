@@ -1,20 +1,14 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
-
-import { formatDistanceToNow } from "date-fns";
-import { PlusCircle, MoreVertical, Trash2, Edit3 } from "lucide-react";
+import { useState } from "react";
 import { useAtom } from "jotai";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { Plus, MessageSquare, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { selectedChatIdAtom } from "@/atoms/chatAtoms";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { dropdownOpenAtom } from "@/atoms/uiAtoms";
 import { IpcClient } from "@/ipc/ipc_client";
 import { showError, showSuccess } from "@/lib/toast";
 import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuItem,
+  SidebarContent,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,17 +18,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useChats } from "@/hooks/useChats";
-import { RenameChatDialog } from "@/components/chat/RenameChatDialog";
-import { DeleteChatDialog } from "@/components/chat/DeleteChatDialog";
+import { RenameChatDialog } from "./chat/RenameChatDialog";
+import { DeleteChatDialog } from "./chat/DeleteChatDialog";
 
-export function ChatList({ show }: { show?: boolean }) {
+export function ChatList({ show: _show }: { show?: boolean }) {
   const navigate = useNavigate();
   const [selectedChatId, setSelectedChatId] = useAtom(selectedChatIdAtom);
   const [selectedAppId, setSelectedAppId] = useAtom(selectedAppIdAtom);
   const [, setIsDropdownOpen] = useAtom(dropdownOpenAtom);
-  const { chats, loading, refreshChats } = useChats(selectedAppId);
-  const routerState = useRouterState();
-  const isChatRoute = routerState.location.pathname === "/chat";
+  const { chats, loading, refreshChats } = useChats(selectedAppId ? parseInt(selectedAppId) : null);
+  const _routerState = useRouterState();
+  // const isChatRoute = routerState.location.pathname === "/chat";
 
   // Rename dialog state
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -46,21 +40,6 @@ export function ChatList({ show }: { show?: boolean }) {
   const [deleteChatId, setDeleteChatId] = useState<number | null>(null);
   const [deleteChatTitle, setDeleteChatTitle] = useState("");
 
-  // Update selectedChatId when route changes
-  useEffect(() => {
-    if (isChatRoute) {
-      const id = routerState.location.search.id;
-      if (id) {
-        console.log("Setting selected chat id to", id);
-        setSelectedChatId(id);
-      }
-    }
-  }, [isChatRoute, routerState.location.search, setSelectedChatId]);
-
-  if (!show) {
-    return;
-  }
-
   const handleChatClick = ({
     chatId,
     appId,
@@ -68,8 +47,8 @@ export function ChatList({ show }: { show?: boolean }) {
     chatId: number;
     appId: number;
   }) => {
-    setSelectedChatId(chatId);
-    setSelectedAppId(appId);
+    setSelectedChatId(chatId.toString());
+    setSelectedAppId(appId.toString());
     navigate({
       to: "/chat",
       search: { id: chatId },
@@ -81,7 +60,7 @@ export function ChatList({ show }: { show?: boolean }) {
     if (selectedAppId) {
       try {
         // Create a new chat with an empty title for now
-        const chatId = await IpcClient.getInstance().createChat(selectedAppId);
+        const chatId = await IpcClient.getInstance().createAppChat(selectedAppId);
 
         // Navigate to the new chat
         setSelectedChatId(chatId);
@@ -93,22 +72,19 @@ export function ChatList({ show }: { show?: boolean }) {
         // Refresh the chat list
         await refreshChats();
       } catch (error) {
-        // DO A TOAST
-        showError(`Failed to create new chat: ${(error as any).toString()}`);
+        console.error("Error creating new chat:", error);
+        showError("Failed to create new chat");
       }
-    } else {
-      // If no app is selected, navigate to home page
-      navigate({ to: "/" });
     }
   };
 
   const handleDeleteChat = async (chatId: number) => {
     try {
-      await IpcClient.getInstance().deleteChat(chatId);
+      await IpcClient.getInstance().deleteAppChat(chatId.toString());
       showSuccess("Chat deleted successfully");
 
       // If the deleted chat was selected, navigate to home
-      if (selectedChatId === chatId) {
+      if (selectedChatId === chatId.toString()) {
         setSelectedChatId(null);
         navigate({ to: "/chat" });
       }
@@ -116,8 +92,15 @@ export function ChatList({ show }: { show?: boolean }) {
       // Refresh the chat list
       await refreshChats();
     } catch (error) {
-      showError(`Failed to delete chat: ${(error as any).toString()}`);
+      console.error("Error deleting chat:", error);
+      showError("Failed to delete chat");
     }
+  };
+
+  const handleRenameChat = (chatId: number, currentTitle: string) => {
+    setRenameChatId(chatId);
+    setRenameChatTitle(currentTitle);
+    setIsRenameDialogOpen(true);
   };
 
   const handleDeleteChatClick = (chatId: number, chatTitle: string) => {
@@ -127,18 +110,12 @@ export function ChatList({ show }: { show?: boolean }) {
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteChatId !== null) {
+    if (deleteChatId) {
       await handleDeleteChat(deleteChatId);
       setIsDeleteDialogOpen(false);
       setDeleteChatId(null);
       setDeleteChatTitle("");
     }
-  };
-
-  const handleRenameChat = (chatId: number, currentTitle: string) => {
-    setRenameChatId(chatId);
-    setRenameChatTitle(currentTitle);
-    setIsRenameDialogOpen(true);
   };
 
   const handleRenameDialogClose = (open: boolean) => {
@@ -150,110 +127,100 @@ export function ChatList({ show }: { show?: boolean }) {
   };
 
   return (
-    <>
-      <SidebarGroup className="overflow-y-auto h-[calc(100vh-112px)]">
-        <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <div className="flex flex-col space-y-4">
-            <Button
-              onClick={handleNewChat}
-              variant="outline"
-              className="flex items-center justify-start gap-2 mx-2 py-3"
-            >
-              <PlusCircle size={16} />
-              <span>New Chat</span>
-            </Button>
+    <SidebarContent className="flex flex-col h-full">
+      <div className="flex items-center justify-between p-4 border-b">
+        <h2 className="text-lg font-semibold">Chats</h2>
+        <Button
+          onClick={handleNewChat}
+          size="sm"
+          variant="outline"
+          disabled={!selectedAppId}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
 
-            {loading ? (
-              <div className="py-3 px-4 text-sm text-gray-500">
-                Loading chats...
-              </div>
-            ) : chats.length === 0 ? (
-              <div className="py-3 px-4 text-sm text-gray-500">
-                No chats found
-              </div>
-            ) : (
-              <SidebarMenu className="space-y-1">
-                {chats.map((chat) => (
-                  <SidebarMenuItem key={chat.id} className="mb-1">
-                    <div className="flex w-[175px] items-center">
-                      <Button
-                        variant="ghost"
-                        onClick={() =>
-                          handleChatClick({
-                            chatId: chat.id,
-                            appId: chat.appId,
-                          })
-                        }
-                        className={`justify-start w-full text-left py-3 pr-1 hover:bg-sidebar-accent/80 ${
-                          selectedChatId === chat.id
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex flex-col w-full">
-                          <span className="truncate">
-                            {chat.title || "New Chat"}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(chat.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                        </div>
-                      </Button>
-
-                      {selectedChatId === chat.id && (
-                        <DropdownMenu
-                          modal={false}
-                          onOpenChange={(open) => setIsDropdownOpen(open)}
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="ml-1 w-4"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="space-y-1 p-2"
-                          >
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleRenameChat(chat.id, chat.title || "")
-                              }
-                              className="px-3 py-2"
-                            >
-                              <Edit3 className="mr-2 h-4 w-4" />
-                              <span>Rename Chat</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleDeleteChatClick(
-                                  chat.id,
-                                  chat.title || "New Chat",
-                                )
-                              }
-                              className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 focus:bg-red-50 dark:focus:bg-red-950/50"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Delete Chat</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-2">
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">Recent Chats</h3>
+          {loading ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : chats.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">
+              <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No chats yet</p>
+              <p className="text-xs">Start a conversation to see your chats here</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {chats.map((chat) => (
+                <div key={chat.id} className="relative">
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      handleChatClick({
+                        chatId: typeof chat.id === 'string' ? parseInt(chat.id) : chat.id,
+                        appId: chat.appId,
+                      })
+                    }
+                    className={`justify-start w-full text-left py-3 pr-1 hover:bg-sidebar-accent/80 ${
+                      selectedChatId === chat.id.toString()
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex flex-col w-full">
+                      <span className="text-sm font-medium truncate">
+                        {chat.name || "Untitled Chat"}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {chat.lastMessage
+                          ? chat.lastMessage.substring(0, 50) +
+                            (chat.lastMessage.length > 50 ? "..." : "")
+                          : "No messages yet"}
+                      </span>
                     </div>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            )}
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
+                  </Button>
+
+                  {selectedChatId === chat.id.toString() && (
+                    <DropdownMenu
+                      modal={false}
+                      onOpenChange={(open) => setIsDropdownOpen(open)}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-sidebar-accent/80"
+                        >
+                          <MoreHorizontal size={14} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleRenameChat(typeof chat.id === 'string' ? parseInt(chat.id) : chat.id, chat.name || "")}
+                        >
+                          <Edit size={14} className="mr-2" />
+                          <span>Rename Chat</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteChatClick(typeof chat.id === 'string' ? parseInt(chat.id) : chat.id, chat.name || "New Chat")}
+                          className="text-red-600"
+                        >
+                          <Trash2 size={14} className="mr-2" />
+                          <span>Delete Chat</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Rename Chat Dialog */}
       {renameChatId !== null && (
@@ -273,6 +240,6 @@ export function ChatList({ show }: { show?: boolean }) {
         onConfirmDelete={handleConfirmDelete}
         chatTitle={deleteChatTitle}
       />
-    </>
+    </SidebarContent>
   );
 }

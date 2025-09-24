@@ -14,6 +14,7 @@ const logger = log.scope("settings");
 // Need to maintain backwards compatibility!
 const DEFAULT_SETTINGS: UserSettings = {
   selectedModel: {
+    id: "auto",
     name: "auto",
     provider: "auto",
   },
@@ -61,10 +62,10 @@ export function readSettings(): UserSettings {
         }
       }
       if (supabase.accessToken) {
-        const encryptionType = supabase.accessToken.encryptionType;
+        const encryptionType = typeof supabase.accessToken === 'string' ? undefined : supabase.accessToken.encryptionType;
         if (encryptionType) {
           supabase.accessToken = {
-            value: decrypt(supabase.accessToken),
+            value: typeof supabase.accessToken === 'string' ? supabase.accessToken : supabase.accessToken.value,
             encryptionType,
           };
         }
@@ -82,35 +83,35 @@ export function readSettings(): UserSettings {
         }
       }
       if (neon.accessToken) {
-        const encryptionType = neon.accessToken.encryptionType;
+        const encryptionType = typeof neon.accessToken === 'string' ? undefined : neon.accessToken.encryptionType;
         if (encryptionType) {
           neon.accessToken = {
-            value: decrypt(neon.accessToken),
+            value: typeof neon.accessToken === 'string' ? neon.accessToken : neon.accessToken.value,
             encryptionType,
           };
         }
       }
     }
     if (combinedSettings.githubAccessToken) {
-      const encryptionType = combinedSettings.githubAccessToken.encryptionType;
+      const encryptionType = typeof combinedSettings.githubAccessToken === 'string' ? undefined : combinedSettings.githubAccessToken.encryptionType;
       combinedSettings.githubAccessToken = {
-        value: decrypt(combinedSettings.githubAccessToken),
+        value: typeof combinedSettings.githubAccessToken === 'string' ? combinedSettings.githubAccessToken : combinedSettings.githubAccessToken.value,
         encryptionType,
       };
     }
     if (combinedSettings.vercelAccessToken) {
-      const encryptionType = combinedSettings.vercelAccessToken.encryptionType;
+      const encryptionType = typeof combinedSettings.vercelAccessToken === 'string' ? undefined : combinedSettings.vercelAccessToken.encryptionType;
       combinedSettings.vercelAccessToken = {
-        value: decrypt(combinedSettings.vercelAccessToken),
+        value: typeof combinedSettings.vercelAccessToken === 'string' ? combinedSettings.vercelAccessToken : combinedSettings.vercelAccessToken.value,
         encryptionType,
       };
     }
     for (const provider in combinedSettings.providerSettings) {
-      if (combinedSettings.providerSettings[provider].apiKey) {
+      if ((combinedSettings.providerSettings as any)[provider].apiKey) {
         const encryptionType =
-          combinedSettings.providerSettings[provider].apiKey.encryptionType;
-        combinedSettings.providerSettings[provider].apiKey = {
-          value: decrypt(combinedSettings.providerSettings[provider].apiKey),
+          (combinedSettings.providerSettings as any)[provider].apiKey.encryptionType;
+        (combinedSettings.providerSettings as any)[provider].apiKey = {
+          value: decrypt((combinedSettings.providerSettings as any)[provider].apiKey),
           encryptionType,
         };
       }
@@ -133,18 +134,18 @@ export function writeSettings(settings: Partial<UserSettings>): void {
     const newSettings = { ...currentSettings, ...settings };
     if (newSettings.githubAccessToken) {
       newSettings.githubAccessToken = encrypt(
-        newSettings.githubAccessToken.value,
+        typeof newSettings.githubAccessToken === 'string' ? newSettings.githubAccessToken : newSettings.githubAccessToken.value,
       );
     }
     if (newSettings.vercelAccessToken) {
       newSettings.vercelAccessToken = encrypt(
-        newSettings.vercelAccessToken.value,
+        typeof newSettings.vercelAccessToken === 'string' ? newSettings.vercelAccessToken : newSettings.vercelAccessToken.value,
       );
     }
     if (newSettings.supabase) {
       if (newSettings.supabase.accessToken) {
         newSettings.supabase.accessToken = encrypt(
-          newSettings.supabase.accessToken.value,
+          typeof newSettings.supabase.accessToken === 'string' ? newSettings.supabase.accessToken : newSettings.supabase.accessToken.value,
         );
       }
       if (newSettings.supabase.refreshToken) {
@@ -156,7 +157,7 @@ export function writeSettings(settings: Partial<UserSettings>): void {
     if (newSettings.neon) {
       if (newSettings.neon.accessToken) {
         newSettings.neon.accessToken = encrypt(
-          newSettings.neon.accessToken.value,
+          typeof newSettings.neon.accessToken === 'string' ? newSettings.neon.accessToken : newSettings.neon.accessToken.value,
         );
       }
       if (newSettings.neon.refreshToken) {
@@ -166,9 +167,9 @@ export function writeSettings(settings: Partial<UserSettings>): void {
       }
     }
     for (const provider in newSettings.providerSettings) {
-      if (newSettings.providerSettings[provider].apiKey) {
-        newSettings.providerSettings[provider].apiKey = encrypt(
-          newSettings.providerSettings[provider].apiKey.value,
+      if ((newSettings.providerSettings as any)[provider].apiKey) {
+        (newSettings.providerSettings as any)[provider].apiKey = encrypt(
+          (newSettings.providerSettings as any)[provider].apiKey.value,
         );
       }
     }

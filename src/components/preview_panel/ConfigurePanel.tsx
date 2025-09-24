@@ -66,7 +66,7 @@ export const ConfigurePanel = () => {
     queryFn: async () => {
       if (!selectedAppId) return [];
       const ipcClient = IpcClient.getInstance();
-      return await ipcClient.getAppEnvVars({ appId: selectedAppId });
+      return await ipcClient.getEnvVars(selectedAppId);
     },
     enabled: !!selectedAppId,
   });
@@ -76,10 +76,10 @@ export const ConfigurePanel = () => {
     mutationFn: async (newEnvVars: { key: string; value: string }[]) => {
       if (!selectedAppId) throw new Error("No app selected");
       const ipcClient = IpcClient.getInstance();
-      return await ipcClient.setAppEnvVars({
-        appId: selectedAppId,
-        envVars: newEnvVars,
-      });
+      // Save each environment variable individually
+      for (const envVar of newEnvVars) {
+        await ipcClient.setEnvVar(selectedAppId, envVar.key, envVar.value, (envVar as any).isSecret);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -99,7 +99,7 @@ export const ConfigurePanel = () => {
     }
 
     // Check for duplicate keys
-    if (envVars.some((envVar) => envVar.key === newKey.trim())) {
+    if (envVars.some((envVar: any) => envVar.key === newKey.trim())) {
       showError("Environment variable with this key already exists");
       return;
     }
@@ -129,7 +129,7 @@ export const ConfigurePanel = () => {
     // Check for duplicate keys (excluding the current one being edited)
     if (
       envVars.some(
-        (envVar) =>
+        (envVar: any) =>
           envVar.key === editingKeyValue.trim() && envVar.key !== editingKey,
       )
     ) {
@@ -137,7 +137,7 @@ export const ConfigurePanel = () => {
       return;
     }
 
-    const newEnvVars = envVars.map((envVar) =>
+    const newEnvVars = envVars.map((envVar: any) =>
       envVar.key === editingKey
         ? { key: editingKeyValue.trim(), value: editingValue.trim() }
         : envVar,
@@ -156,7 +156,7 @@ export const ConfigurePanel = () => {
 
   const handleDelete = useCallback(
     (key: string) => {
-      const newEnvVars = envVars.filter((envVar) => envVar.key !== key);
+      const newEnvVars = envVars.filter((envVar: any) => envVar.key !== key);
       saveEnvVarsMutation.mutate(newEnvVars);
     },
     [envVars, saveEnvVarsMutation],
@@ -298,7 +298,7 @@ export const ConfigurePanel = () => {
                 No environment variables configured
               </p>
             ) : (
-              envVars.map((envVar) => (
+              envVars.map((envVar: any) => (
                 <div
                   key={envVar.key}
                   className="flex items-center space-x-2 p-2 border rounded-md"

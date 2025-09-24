@@ -1,6 +1,6 @@
 import { createRoute } from "@tanstack/react-router";
 import { rootRoute } from "./root";
-import ChatPage from "../pages/chat";
+import { ChatPage } from "../pages/chat";
 import { z } from "zod";
 
 export const chatRoute = createRoute({

@@ -142,7 +142,7 @@ export async function getModelClient(
       const envVarName = providerInfo?.envVarName;
 
       const apiKey =
-        settings.providerSettings?.[autoModel.provider]?.apiKey?.value ||
+        (settings.providerSettings as any)?.[autoModel.provider]?.apiKey?.value ||
         (envVarName ? getEnvVar(envVarName) : undefined);
 
       if (apiKey) {
@@ -152,6 +152,7 @@ export async function getModelClient(
         // Recursively call with the specific model found
         return await getModelClient(
           {
+            id: "auto",
             provider: autoModel.provider,
             name: autoModel.name,
           },
@@ -178,7 +179,7 @@ function getRegularModelClient(
 } {
   // Get API key for the specific provider
   const apiKey =
-    settings.providerSettings?.[model.provider]?.apiKey?.value ||
+    (settings.providerSettings as any)?.[model.provider]?.apiKey?.value ||
     (providerConfig.envVarName
       ? getEnvVar(providerConfig.envVarName)
       : undefined);

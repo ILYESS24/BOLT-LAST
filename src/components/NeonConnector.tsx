@@ -16,7 +16,7 @@ export function NeonConnector() {
 
   useEffect(() => {
     const handleDeepLink = async () => {
-      if (lastDeepLink?.type === "neon-oauth-return") {
+      if (lastDeepLink && "type" in lastDeepLink && lastDeepLink.type === "neon-oauth-return") {
         await refreshSettings();
         toast.success("Successfully connected to Neon!");
       }
@@ -66,11 +66,11 @@ export function NeonConnector() {
         <div
           onClick={async () => {
             if (settings?.isTestMode) {
-              await IpcClient.getInstance().fakeHandleNeonConnect();
+              // await IpcClient.getInstance().fakeHandleNeonConnect();
             } else {
-              await IpcClient.getInstance().openExternalUrl(
-                "https://oauth.dyad.sh/api/integrations/neon/login",
-              );
+              // await IpcClient.getInstance().openExternalUrl(
+              //   "https://oauth.dyad.sh/api/integrations/neon/login",
+              // );
             }
           }}
           className="w-auto h-10 cursor-pointer flex items-center justify-center px-4 py-2 rounded-md border-2 transition-colors font-medium text-sm dark:bg-gray-900 dark:border-gray-700"

@@ -1,22 +1,39 @@
-import { createRoute } from "@tanstack/react-router";
-import { rootRoute } from "@/routes/root";
-import { ProviderSettingsPage } from "@/components/settings/ProviderSettingsPage";
+import React from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { ProviderSettings } from '../../../components/ProviderSettings';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 
-interface ProviderSettingsParams {
-  provider: string;
-}
-
-export const providerSettingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/providers/$provider",
-  params: {
-    parse: (params: { provider: string }): ProviderSettingsParams => ({
-      provider: params.provider,
-    }),
-  },
-  component: function ProviderSettingsRouteComponent() {
-    const { provider } = providerSettingsRoute.useParams();
-
-    return <ProviderSettingsPage provider={provider} />;
-  },
+export const Route = createFileRoute('/settings/providers/$provider' as any)({
+  component: ProviderPage,
 });
+
+export const providerSettingsRoute = Route;
+
+function ProviderPage() {
+  const { provider } = Route.useParams();
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Configuration du fournisseur</h1>
+        <p className="text-muted-foreground">
+          Configurez les paramètres pour {provider}
+        </p>
+      </div>
+
+      <div className="max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Paramètres {provider}</CardTitle>
+            <CardDescription>
+              Configurez votre clé API et les paramètres spécifiques à {provider}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProviderSettings />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

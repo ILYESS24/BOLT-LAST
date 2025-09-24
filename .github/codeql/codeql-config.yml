@@ -1,0 +1,37 @@
+name: "CodeQL Configuration"
+
+# Configuration pour l'analyse CodeQL
+queries:
+  # Utiliser les requêtes de sécurité et de qualité par défaut
+  - uses: security-and-quality
+
+# Configuration spécifique pour JavaScript/TypeScript
+paths:
+  - "src/"
+  - "e2e-tests/"
+  - "worker/"
+  - "workers/"
+
+# Exclusions
+paths-ignore:
+  - "node_modules/"
+  - "out/"
+  - "dist/"
+  - "build/"
+  - "coverage/"
+  - "scaffold/"
+  - "packages/"
+  - "testing/"
+  - "tools/"
+  - "scripts/"
+  - "drizzle/"
+  - "snapshots/"
+
+# Configuration des langages
+languages:
+  - javascript
+
+# Configuration des requêtes personnalisées (optionnel)
+# queries:
+#   - name: custom-queries
+#     uses: ./.github/codeql/custom-queries

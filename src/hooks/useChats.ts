@@ -1,18 +1,18 @@
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { chatsAtom, chatsLoadingAtom } from "@/atoms/chatAtoms";
+import { chatsAtom, chatLoadingAtom } from "../atoms/chatAtoms";
 import { getAllChats } from "@/lib/chat";
 import type { ChatSummary } from "@/lib/schemas";
 
-export function useChats(appId: number | null) {
+export function useChats(appId: string | number | null) {
   const [chats, setChats] = useAtom(chatsAtom);
-  const [loading, setLoading] = useAtom(chatsLoadingAtom);
+  const [loading, setLoading] = useAtom(chatLoadingAtom);
 
   useEffect(() => {
     const fetchChats = async () => {
       try {
         setLoading(true);
-        const chatList = await getAllChats(appId || undefined);
+        const chatList = await getAllChats(typeof appId === 'string' ? parseInt(appId) : (appId as number) || undefined);
         setChats(chatList);
       } catch (error) {
         console.error("Failed to load chats:", error);
@@ -27,7 +27,7 @@ export function useChats(appId: number | null) {
   const refreshChats = async () => {
     try {
       setLoading(true);
-      const chatList = await getAllChats(appId || undefined);
+      const chatList = await getAllChats(typeof appId === 'string' ? parseInt(appId) : (appId as number) || undefined);
       setChats(chatList);
       return chatList;
     } catch (error) {

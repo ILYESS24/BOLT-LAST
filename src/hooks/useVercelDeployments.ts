@@ -14,7 +14,7 @@ export function useVercelDeployments(appId: number) {
     queryKey: ["vercel-deployments", appId],
     queryFn: async () => {
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.getVercelDeployments({ appId });
+      return ipcClient.getVercelDeployments(appId.toString());
     },
     // enabled: false, // Don't auto-fetch, only fetch when explicitly requested
   });
@@ -22,7 +22,7 @@ export function useVercelDeployments(appId: number) {
   const disconnectProjectMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.disconnectVercelProject({ appId });
+      return ipcClient.disconnectVercelProject(appId.toString());
     },
     onSuccess: () => {
       // Clear deployments cache when project is disconnected

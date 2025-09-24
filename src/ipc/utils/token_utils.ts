@@ -20,7 +20,7 @@ const DEFAULT_CONTEXT_WINDOW = 128_000;
 
 export async function getContextWindow() {
   const settings = readSettings();
-  const modelOption = await findLanguageModel(settings.selectedModel);
+  const modelOption = await findLanguageModel(settings.selectedModel || { id: "default", name: "default", provider: "default" });
   return modelOption?.contextWindow || DEFAULT_CONTEXT_WINDOW;
 }
 

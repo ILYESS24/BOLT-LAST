@@ -24,12 +24,19 @@ export function useCustomLanguageModelProvider() {
         throw new Error("API base URL is required");
       }
 
-      return ipcClient.createCustomLanguageModelProvider({
+      const _provider = await ipcClient.createCustomLanguageModelProvider({
         id: params.id.trim(),
         name: params.name.trim(),
         apiBaseUrl: params.apiBaseUrl.trim(),
         envVarName: params.envVarName?.trim() || undefined,
       });
+      return {
+        id: params.id.trim(),
+        name: params.name.trim(),
+        apiBaseUrl: params.apiBaseUrl.trim(),
+        envVarName: params.envVarName?.trim() || undefined,
+        type: "custom" as const,
+      };
     },
     onSuccess: () => {
       // Invalidate and refetch

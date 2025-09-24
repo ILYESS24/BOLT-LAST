@@ -13,7 +13,24 @@ export function useLanguageModelsByProviders() {
   return useQuery<Record<string, LanguageModel[]>, Error>({
     queryKey: ["language-models-by-providers"],
     queryFn: async () => {
-      return ipcClient.getLanguageModelsByProviders();
+      const models = await ipcClient.getLanguageModelsByProviders();
+      return Object.fromEntries(
+        Object.entries(models).map(([provider, providerModels]) => [
+          provider,
+          providerModels.map((model: any) => ({
+            id: model.id || Date.now(),
+            apiName: model.apiName || model.name,
+            displayName: model.displayName || model.name,
+            description: model.description || "",
+            tag: model.tag,
+            maxOutputTokens: model.maxOutputTokens,
+            contextWindow: model.contextWindow,
+            temperature: model.temperature,
+            dollarSigns: model.dollarSigns,
+            type: model.type || "custom",
+          }))
+        ])
+      );
     },
   });
 }

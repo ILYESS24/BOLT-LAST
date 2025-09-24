@@ -3,7 +3,7 @@ import { IpcClient } from "@/ipc/ipc_client";
 import type { ProblemReport } from "@/ipc/ipc_types";
 import { useSettings } from "./useSettings";
 
-export function useCheckProblems(appId: number | null) {
+export function useCheckProblems(appId: string | number | null) {
   const { settings } = useSettings();
   const {
     data: problemReport,
@@ -17,7 +17,10 @@ export function useCheckProblems(appId: number | null) {
         throw new Error("App ID is required");
       }
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.checkProblems({ appId });
+      const problems = await ipcClient.checkProblems(appId.toString());
+      return {
+        problems,
+      };
     },
     enabled: !!appId && settings?.enableAutoFixProblems,
     // DO NOT SHOW ERROR TOAST.

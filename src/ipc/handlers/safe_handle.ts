@@ -1,38 +1,34 @@
-import { ipcMain, IpcMainInvokeEvent } from "electron";
-import log from "electron-log";
-import { IS_TEST_BUILD } from "../utils/test_utils";
+import { IpcMainInvokeEvent } from 'electron';
 
-export function createLoggedHandler(logger: log.LogFunctions) {
-  return (
-    channel: string,
-    fn: (event: IpcMainInvokeEvent, ...args: any[]) => Promise<any>,
-  ) => {
-    ipcMain.handle(
-      channel,
-      async (event: IpcMainInvokeEvent, ...args: any[]) => {
-        logger.log(`IPC: ${channel} called with args: ${JSON.stringify(args)}`);
-        try {
-          const result = await fn(event, ...args);
-          logger.log(
-            `IPC: ${channel} returned: ${JSON.stringify(result)?.slice(0, 100)}...`,
-          );
-          return result;
-        } catch (error) {
-          logger.error(
-            `Error in ${fn.name}: args: ${JSON.stringify(args)}`,
-            error,
-          );
-          throw new Error(`[${channel}] ${error}`);
-        }
-      },
-    );
+export function safeHandle<T extends any[], R>(
+  handler: (event: IpcMainInvokeEvent, ...args: T) => Promise<R>
+) {
+  return async (event: IpcMainInvokeEvent, ...args: T): Promise<R> => {
+    try {
+      return await handler(event, ...args);
+    } catch (error) {
+      console.error('Error in IPC handler:', error);
+      throw error;
+    }
   };
 }
 
-export function createTestOnlyLoggedHandler(logger: log.LogFunctions) {
-  if (!IS_TEST_BUILD) {
-    // Returns a no-op function for non-e2e test builds.
-    return () => {};
-  }
-  return createLoggedHandler(logger);
+export function createLoggedHandler<T extends any[], R>(
+  handler: (event: IpcMainInvokeEvent, ...args: T) => Promise<R>
+) {
+  return safeHandle(handler);
+}
+
+export function createTestOnlyLoggedHandler<T extends any[], R>(
+  handler: (event: IpcMainInvokeEvent, ...args: T) => Promise<R>
+) {
+  return safeHandle(handler);
+}
+
+// Fonction pour créer un handler avec logging
+export function createHandlerWithLogging<T extends any[], R>(
+  logger: any,
+  handler: (event: IpcMainInvokeEvent, ...args: T) => Promise<R>
+) {
+  return safeHandle(handler);
 }

@@ -1,12 +1,11 @@
-import { dialog } from "electron";
+import { dialog , ipcMain } from "electron";
 import fs from "fs/promises";
 import path from "path";
-import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
 import { getDyadAppPath } from "../../paths/paths";
-import { apps } from "@/db/schema";
+import { apps , chats } from "@/db/schema";
 import { db } from "@/db";
-import { chats } from "@/db/schema";
+
 import { eq } from "drizzle-orm";
 import git from "isomorphic-git";
 
@@ -14,12 +13,12 @@ import { ImportAppParams, ImportAppResult } from "../ipc_types";
 import { copyDirectoryRecursive } from "../utils/file_utils";
 import { gitCommit } from "../utils/git_utils";
 
+
 const logger = log.scope("import-handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerImportHandlers() {
   // Handler for selecting an app folder
-  handle("select-app-folder", async () => {
+  ipcMain.handle("select-app-folder", async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openDirectory"],
       title: "Select App Folder to Import",
@@ -36,7 +35,7 @@ export function registerImportHandlers() {
   });
 
   // Handler for checking if AI_RULES.md exists
-  handle("check-ai-rules", async (_, { path: appPath }: { path: string }) => {
+  ipcMain.handle("check-ai-rules", async (_, { path: appPath }: { path: string }) => {
     try {
       await fs.access(path.join(appPath, "AI_RULES.md"));
       return { exists: true };
@@ -46,7 +45,7 @@ export function registerImportHandlers() {
   });
 
   // Handler for checking if an app name is already taken
-  handle("check-app-name", async (_, { appName }: { appName: string }) => {
+  ipcMain.handle("check-app-name", async (_, { appName }: { appName: string }) => {
     // Check filesystem
     const appPath = getDyadAppPath(appName);
     try {
@@ -65,7 +64,7 @@ export function registerImportHandlers() {
   });
 
   // Handler for importing an app
-  handle(
+  ipcMain.handle(
     "import-app",
     async (
       _,

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useAtom, useAtomValue } from "jotai";
-import { chatMessagesAtom, chatStreamCountAtom } from "../atoms/chatAtoms";
+import { useAtom } from "jotai";
+import { chatMessagesAtom } from "../atoms/chatAtoms";
 import { IpcClient } from "@/ipc/ipc_client";
 
 import { ChatHeader } from "./chat/ChatHeader";
@@ -23,7 +23,7 @@ export function ChatPanel({
   const [messages, setMessages] = useAtom(chatMessagesAtom);
   const [isVersionPaneOpen, setIsVersionPaneOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const streamCount = useAtomValue(chatStreamCountAtom);
+  // const streamCount = useAtomValue(chatStreamCountAtom);
   // Reference to store the processed prompt so we don't submit it twice
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -60,9 +60,9 @@ export function ChatPanel({
   };
 
   useEffect(() => {
-    console.log("streamCount", streamCount);
+    // console.log("streamCount", streamCount);
     scrollToBottom();
-  }, [streamCount]);
+  }, []);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -85,7 +85,7 @@ export function ChatPanel({
       setMessages([]);
       return;
     }
-    const chat = await IpcClient.getInstance().getChat(chatId);
+    const chat = await IpcClient.getInstance().getAppChat(chatId.toString());
     setMessages(chat.messages);
   }, [chatId, setMessages]);
 
@@ -126,7 +126,7 @@ export function ChatPanel({
         {!isVersionPaneOpen && (
           <div className="flex-1 flex flex-col min-w-0">
             <MessagesList
-              messages={messages}
+              messages={messages as any}
               messagesEndRef={messagesEndRef}
               ref={messagesContainerRef}
             />

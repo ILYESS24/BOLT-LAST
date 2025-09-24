@@ -51,7 +51,7 @@ export function SettingsList({ show }: { show: boolean }) {
 
   const handleScrollAndNavigateTo = async (id: string) => {
     await navigate({
-      to: "/settings",
+      to: "/settings" as any,
     });
     const element = document.getElementById(id);
     if (element) {

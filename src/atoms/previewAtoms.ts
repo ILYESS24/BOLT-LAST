@@ -1,6 +1,8 @@
-import { ComponentSelection } from "@/ipc/ipc_types";
 import { atom } from "jotai";
 
-export const selectedComponentPreviewAtom = atom<ComponentSelection | null>(
-  null,
-);
+// Atoms simples pour éviter les erreurs de signature
+export const selectedFileAtom = atom<string | null>(null);
+export const selectedComponentAtom = atom<string | null>(null);
+export const previewModeAtom = atom<"code" | "preview" | "split">("split");
+export const isPreviewOpenAtom = atom<boolean>(false);
+export const selectedComponentPreviewAtom = atom<string | null>(null);

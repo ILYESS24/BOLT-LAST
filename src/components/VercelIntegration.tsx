@@ -13,7 +13,7 @@ export function VercelIntegration() {
       const result = await updateSettings({
         vercelAccessToken: undefined,
       });
-      if (result) {
+      if (result !== undefined) {
         showSuccess("Successfully disconnected from Vercel");
       } else {
         showError("Failed to disconnect from Vercel");

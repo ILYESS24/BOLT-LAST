@@ -1,7 +1,7 @@
-import { IpcMainInvokeEvent } from "electron";
-import log from "electron-log";
-import { createLoggedHandler } from "./safe_handle";
+import { IpcMainInvokeEvent , ipcMain } from "electron";
+// import log from "electron-log";
 import { db } from "@/db";
+
 import { prompts } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import {
@@ -10,11 +10,9 @@ import {
   UpdatePromptParamsDto,
 } from "../ipc_types";
 
-const logger = log.scope("prompt_handlers");
-const handle = createLoggedHandler(logger);
 
 export function registerPromptHandlers() {
-  handle("prompts:list", async (): Promise<PromptDto[]> => {
+  ipcMain.handle("prompts:list", async (): Promise<PromptDto[]> => {
     const rows = db.select().from(prompts).all();
     return rows.map((r) => ({
       id: r.id!,
@@ -26,7 +24,7 @@ export function registerPromptHandlers() {
     }));
   });
 
-  handle(
+  ipcMain.handle(
     "prompts:create",
     async (
       _e: IpcMainInvokeEvent,
@@ -59,7 +57,7 @@ export function registerPromptHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "prompts:update",
     async (
       _e: IpcMainInvokeEvent,
@@ -81,7 +79,7 @@ export function registerPromptHandlers() {
     },
   );
 
-  handle(
+  ipcMain.handle(
     "prompts:delete",
     async (_e: IpcMainInvokeEvent, id: number): Promise<void> => {
       if (!id) throw new Error("Prompt id is required");

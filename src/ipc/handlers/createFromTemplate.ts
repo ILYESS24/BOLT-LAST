@@ -26,7 +26,7 @@ export async function createFromTemplate({
     return;
   }
 
-  const template = await getTemplateOrThrow(templateId);
+  const template = await getTemplateOrThrow(templateId || "");
   if (!template.githubUrl) {
     throw new Error(`Template ${templateId} has no GitHub URL`);
   }
@@ -35,8 +35,8 @@ export async function createFromTemplate({
 }
 
 async function cloneRepo(repoUrl: string): Promise<string> {
-  let orgName: string;
-  let repoName: string;
+  // let orgName: string;
+  // let repoName: string;
 
   const url = new URL(repoUrl);
   if (url.protocol !== "https:") {
@@ -55,8 +55,8 @@ async function cloneRepo(repoUrl: string): Promise<string> {
     );
   }
 
-  orgName = pathParts[0];
-  repoName = path.basename(pathParts[1], ".git"); // Remove .git suffix if present
+  const orgName = pathParts[0];
+  const repoName = path.basename(pathParts[1], ".git"); // Remove .git suffix if present
 
   if (!orgName || !repoName) {
     // This case should ideally be caught by pathParts.length !== 2

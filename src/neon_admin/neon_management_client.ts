@@ -178,7 +178,7 @@ export async function getNeonClient(): Promise<Api<unknown>> {
   const settings = readSettings();
 
   // Check if Neon token exists in settings
-  const neonAccessToken = settings.neon?.accessToken?.value;
+  const neonAccessToken = typeof settings.neon?.accessToken === 'string' ? settings.neon.accessToken : settings.neon?.accessToken?.value;
   const expiresIn = settings.neon?.expiresIn;
 
   if (!neonAccessToken) {
@@ -190,7 +190,7 @@ export async function getNeonClient(): Promise<Api<unknown>> {
     await withLock("refresh-neon-token", refreshNeonToken);
     // Get updated settings after refresh
     const updatedSettings = readSettings();
-    const newAccessToken = updatedSettings.neon?.accessToken?.value;
+    const newAccessToken = typeof updatedSettings.neon?.accessToken === 'string' ? updatedSettings.neon.accessToken : updatedSettings.neon?.accessToken?.value;
 
     if (!newAccessToken) {
       throw new Error("Failed to refresh Neon access token");

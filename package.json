@@ -96,7 +96,7 @@
     "vitest": "^3.1.1"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.4",
+    "@ai-sdk/anthropic": "^2.0.18",
     "@ai-sdk/azure": "^2.0.17",
     "@ai-sdk/google": "^2.0.6",
     "@ai-sdk/openai": "2.0.15",

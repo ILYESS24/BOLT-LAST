@@ -1,8 +1,6 @@
 services:
-  - type: web
-    name: dyad-app
-    env: static
-    plan: free
+  - type: static
+    name: dyad-static
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:

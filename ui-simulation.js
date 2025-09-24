@@ -205,7 +205,7 @@ function simulateAIChat() {
   
   console.log(colorize('\n💭 Simulation de conversation IA:', 'yellow'));
   
-  chatScenarios.forEach((scenario, index) => {
+  chatScenarios.forEach((scenario, _index) => {
     console.log(colorize(`\n👤 Utilisateur: ${scenario.user}`, 'blue'));
     console.log(colorize(`🤖 Assistant: ${scenario.ai.substring(0, 100)}...`, 'green'));
   });

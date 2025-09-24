@@ -1,5 +1,5 @@
 // Exemple de fonction serverless pour Netlify
-exports.handler = async (event, context) => {
+exports.handler = async (event, _context) => {
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',

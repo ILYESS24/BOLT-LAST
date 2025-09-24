@@ -5,9 +5,9 @@
  * Simule la création d'apps, l'ajout de modèles AI, la connexion à Supabase, etc.
  */
 
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+// const { spawn } = require('child_process');
+// const fs = require('fs');
+// const path = require('path');
 
 console.log('🚀 Démarrage des simulations Dyad...\n');
 
@@ -163,7 +163,7 @@ async function simulateAIChat() {
   ];
   
   console.log('✅ Conversation simulée:');
-  chatMessages.forEach((msg, index) => {
+  chatMessages.forEach((msg, _index) => {
     const role = msg.role === 'user' ? '👤 Utilisateur' : '🤖 Assistant';
     console.log(`${role}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`);
   });
